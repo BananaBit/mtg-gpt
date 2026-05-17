@@ -2,7 +2,9 @@ export default async function handler(req, res) {
   const { name } = req.query;
 
   if (!name) {
-    return res.status(400).json({ error: "Missing card name" });
+    return res.status(400).json({
+      error: "Missing card name"
+    });
   }
 
   const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`;
@@ -15,5 +17,6 @@ export default async function handler(req, res) {
   });
 
   const data = await response.json();
+
   return res.status(response.status).json(data);
 }
