@@ -95,6 +95,13 @@ async function sendDiscordDigest(cards, set) {
 
 export default async function handler(req, res) {
   try {
+    if (req.query.secret !== process.env.CRON_SECRET) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
     const set = req.query.set || "msh";
     const redisKey = `revealed:${set}:ids`;
 
