@@ -135,7 +135,7 @@ export default async function handler(req, res) {
     const savedIds =
       (await redis.smembers(redisKey)) || [];
 
-    const saved = new Set();
+    const saved = new Set(savedIds);
 
     const newCards = cards.filter(
       (card) => !saved.has(card.id)
