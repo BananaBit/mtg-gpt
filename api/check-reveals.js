@@ -18,7 +18,10 @@ async function fetchAllCards(set = "msh") {
   const cards = [];
 
   while (url) {
-    const response = await fetch(url, { headers: SCRYFALL_HEADERS });
+    const response = await fetch(url, {
+      headers: SCRYFALL_HEADERS,
+    });
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -26,6 +29,7 @@ async function fetchAllCards(set = "msh") {
     }
 
     cards.push(...data.data);
+
     url = data.has_more ? data.next_page : null;
   }
 
@@ -62,40 +66,56 @@ async function sendDiscordDigest(cards, set) {
       description: [
         card.mana_cost || "",
         card.type_line || "",
-        card.oracle_text ? `\n${card.oracle_text.slice(0, 500)}` : "",
+        card.oracle_text
+          ? `\n${card.oracle_text.slice(0, 500)}`
+          : "",
       ]
         .filter(Boolean)
         .join("\n"),
+
       color: 15158332,
+
       image: {
         url: getCardImage(card),
       },
+
       footer: {
         text: `Set: ${set.toUpperCase()} • Collector #${card.collector_number}`,
       },
     }));
 
-    const response = await fetch(process.env.DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: `🦸 ${group.length} new Marvel reveal(s)!`,
-        embeds,
-      }),
-    });
+    const response = await fetch(
+      process.env.DISCORD_WEBHOOK_URL,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: `🦸 ${group.length} new Marvel reveal(s)!`,
+          embeds,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`Discord webhook failed: ${text}`);
+
+      throw new Error(
+        `Discord webhook failed: ${text}`
+      );
     }
   }
 }
 
 export default async function handler(req, res) {
   try {
-    if (req.query.secret !== process.env.CRON_SECRET) {
+    const authHeader = req.headers.authorization;
+
+    if (
+      authHeader !==
+      `Bearer ${process.env.CRON_SECRET}`
+    ) {
       return res.status(401).json({
         success: false,
         error: "Unauthorized",
@@ -103,21 +123,32 @@ export default async function handler(req, res) {
     }
 
     const set = req.query.set || "msh";
+
     const redisKey = `revealed:${set}:ids`;
 
     const cards = await fetchAllCards(set);
-    const currentIds = cards.map((card) => card.id);
 
-    const savedIds = (await redis.smembers(redisKey)) || [];
+    const currentIds = cards.map(
+      (card) => card.id
+    );
+
+    const savedIds =
+      (await redis.smembers(redisKey)) || [];
+
     const saved = new Set(savedIds);
 
-    const newCards = cards.filter((card) => !saved.has(card.id));
+    const newCards = cards.filter(
+      (card) => !saved.has(card.id)
+    );
+
     const isFirstRun = savedIds.length === 0;
 
+    // Prevent initial spam
     if (!isFirstRun && newCards.length > 0) {
       await sendDiscordDigest(newCards, set);
     }
 
+    // Replace stored IDs
     await redis.del(redisKey);
 
     if (currentIds.length > 0) {
@@ -130,7 +161,8 @@ export default async function handler(req, res) {
       total_cards: cards.length,
       new_cards: newCards.map((card) => ({
         name: card.name,
-        collector_number: card.collector_number,
+        collector_number:
+          card.collector_number,
         scryfall: card.scryfall_uri,
         image: getCardImage(card),
       })),
