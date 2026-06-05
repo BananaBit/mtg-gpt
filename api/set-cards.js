@@ -1,4 +1,3 @@
-```js
 const SCRYFALL_HEADERS = {
   "User-Agent": "mtg-beginner-rules-coach/1.0",
   "Accept": "application/json;q=0.9,*/*;q=0.8",
@@ -558,4 +557,3 @@ export default async function handler(req, res) {
     });
   }
 }
-```
