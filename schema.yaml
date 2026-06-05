@@ -1,0 +1,234 @@
+openapi: 3.1.0
+info:
+  title: MTG Scryfall Proxy
+  description: Look up Magic The Gathering cards and compact set card lists using Scryfall Oracle data.
+  version: 1.1.0
+servers:
+  - url: https://mtg-gpt-five.vercel.app
+paths:
+  /api/card:
+    get:
+      operationId: getCardByName
+      summary: Get a Magic card by name
+      description: Retrieves Oracle text, image links, and Scryfall links for a Magic The Gathering card using Scryfall fuzzy
+        matching.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Exact or approximate Magic The Gathering card name.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Card found.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  name:
+                    type: string
+                    description: The official card name returned by Scryfall.
+                  mana_cost:
+                    type:
+                      - string
+                      - "null"
+                    description: The card's mana cost.
+                  type_line:
+                    type:
+                      - string
+                      - "null"
+                    description: The card's type line.
+                  oracle_text:
+                    type:
+                      - string
+                      - "null"
+                    description: The card's current Oracle text.
+                  power:
+                    type:
+                      - string
+                      - "null"
+                    description: Power, when applicable.
+                  toughness:
+                    type:
+                      - string
+                      - "null"
+                    description: Toughness, when applicable.
+                  loyalty:
+                    type:
+                      - string
+                      - "null"
+                    description: Loyalty, when applicable.
+                  keywords:
+                    type: array
+                    items:
+                      type: string
+                    description: Keyword abilities listed by Scryfall.
+                  legalities:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    description: Format legality information from Scryfall.
+                  image:
+                    type:
+                      - string
+                      - "null"
+                    format: uri
+                    description: Direct URL to the card image. Use as a clickable link only; do not embed with Markdown image syntax.
+                  art_crop:
+                    type:
+                      - string
+                      - "null"
+                    format: uri
+                    description: Direct URL to the card art crop, when available.
+                  rulings:
+                    type:
+                      - string
+                      - "null"
+                    format: uri
+                    description: Scryfall rulings API URL.
+                  scryfall:
+                    type:
+                      - string
+                      - "null"
+                    format: uri
+                    description: Scryfall page URL for the card. Always include this link in card detail responses.
+        "400":
+          description: Missing card name.
+        "404":
+          description: Card not found.
+        "500":
+          description: Internal proxy error.
+  /api/set-cards:
+    get:
+      operationId: getScryfallSetCards
+      summary: Get a compact card list for an entire Scryfall set
+      description: Returns a compact, GPT-friendly list of cards from a Magic The Gathering set. Use this for set lists,
+        prerelease analysis, sealed deckbuilding, draft archetypes, color rankings, bombs, removal, fixing, synergies,
+        and commons/uncommons evaluation.
+      parameters:
+        - name: set
+          in: query
+          required: true
+          description: Scryfall set code, for example "msh". Use this when the user asks about a specific set list or set analysis.
+          schema:
+            type: string
+        - name: includeExtras
+          in: query
+          required: false
+          description: Whether to include extras such as tokens, emblems, and other special non-main-set objects. For prerelease,
+            sealed, draft, and normal set analysis, use false unless the user explicitly asks for extras.
+          schema:
+            type: boolean
+            default: false
+        - name: includeVariations
+          in: query
+          required: false
+          description: Whether to include alternate versions, variants, showcase cards, promos, and other variant printings. For
+            prerelease, sealed, draft, and normal set analysis, use false unless the user explicitly asks for variants
+            or the complete Scryfall listing.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Compact set card list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  set:
+                    type: string
+                    description: Scryfall set code.
+                  name:
+                    type: string
+                    description: Full set name.
+                  count:
+                    type: integer
+                    description: Number of cards returned by the endpoint.
+                  cards:
+                    type: array
+                    description: Compact list of cards from the requested set.
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        name:
+                          type: string
+                          description: Card name.
+                        cost:
+                          type: string
+                          description: Mana cost, when present.
+                        mv:
+                          type: number
+                          description: Mana value.
+                        colors:
+                          type: array
+                          description: Card colors.
+                          items:
+                            type: string
+                            enum:
+                              - W
+                              - U
+                              - B
+                              - R
+                              - G
+                        color_identity:
+                          type: array
+                          description: Color identity, included only when it adds information beyond colors.
+                          items:
+                            type: string
+                            enum:
+                              - W
+                              - U
+                              - B
+                              - R
+                              - G
+                        rarity:
+                          type: string
+                          description: Card rarity.
+                          enum:
+                            - common
+                            - uncommon
+                            - rare
+                            - mythic
+                            - special
+                            - bonus
+                        type:
+                          type: string
+                          description: Type line.
+                        text:
+                          type: string
+                          description: Oracle text or combined face text for multi-face cards.
+                        pt:
+                          type: string
+                          description: Power/toughness, when present.
+                        loyalty:
+                          type: string
+                          description: Loyalty, when present.
+                        defense:
+                          type: string
+                          description: Battle defense, when present.
+                        keywords:
+                          type: array
+                          description: Keyword abilities listed by Scryfall.
+                          items:
+                            type: string
+                        number:
+                          type: string
+                          description: Collector number.
+                required:
+                  - set
+                  - name
+                  - count
+                  - cards
+        "400":
+          description: Missing or invalid set code.
+        "404":
+          description: Set not found or no cards found.
+        "500":
+          description: Internal proxy error.
