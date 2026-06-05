@@ -1,17 +1,19 @@
+```yaml
 openapi: 3.1.0
 info:
   title: MTG Scryfall Proxy
-  description: Look up Magic The Gathering cards and compact set card lists using Scryfall Oracle data.
-  version: 1.1.0
+  description: Look up Magic The Gathering cards and compact paginated set card lists using Scryfall Oracle data.
+  version: 1.2.0
+
 servers:
   - url: https://mtg-gpt-five.vercel.app
+
 paths:
   /api/card:
     get:
       operationId: getCardByName
       summary: Get a Magic card by name
-      description: Retrieves Oracle text, image links, and Scryfall links for a Magic The Gathering card using Scryfall fuzzy
-        matching.
+      description: Retrieves Oracle text, image links, and Scryfall links for a Magic The Gathering card using Scryfall fuzzy matching.
       parameters:
         - name: name
           in: query
@@ -101,13 +103,12 @@ paths:
           description: Card not found.
         "500":
           description: Internal proxy error.
+
   /api/set-cards:
     get:
       operationId: getScryfallSetCards
-      summary: Get a compact card list for an entire Scryfall set
-      description: Returns a compact, GPT-friendly list of cards from a Magic The Gathering set. Use this for set lists,
-        prerelease analysis, sealed deckbuilding, draft archetypes, color rankings, bombs, removal, fixing, synergies,
-        and commons/uncommons evaluation.
+      summary: Get a compact paginated card list for a Scryfall set
+      description: Returns a compact, GPT-friendly, paginated list of cards from a Magic The Gathering set. Use this for set lists, prerelease analysis, sealed deckbuilding, draft archetypes, color rankings, bombs, removal, fixing, synergies, and commons/uncommons evaluation.
       parameters:
         - name: set
           in: query
@@ -115,26 +116,77 @@ paths:
           description: Scryfall set code, for example "msh". Use this when the user asks about a specific set list or set analysis.
           schema:
             type: string
+
+        - name: page
+          in: query
+          required: false
+          description: Page number to retrieve. Start with 1. If hasMore is true in the response, request nextPage.
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of cards to return per page. Use 75 by default. Maximum is 100.
+          schema:
+            type: integer
+            default: 75
+            minimum: 1
+            maximum: 100
+
+        - name: view
+          in: query
+          required: false
+          description: Response detail level. Use "limited" for deckbuilding analysis and "names" for a very compact list.
+          schema:
+            type: string
+            default: limited
+            enum:
+              - limited
+              - names
+
+        - name: rarity
+          in: query
+          required: false
+          description: Optional comma-separated rarity filter, such as "common,uncommon" or "rare,mythic".
+          schema:
+            type: string
+
+        - name: color
+          in: query
+          required: false
+          description: Optional color filter. Use W, U, B, R, G, or C. Also supports color names like white, blue, black, red, green, and colorless.
+          schema:
+            type: string
+
+        - name: colorPair
+          in: query
+          required: false
+          description: Optional two-color pair filter, such as WU, UB, BR, RG, GW, WB, UR, BG, RW, or GU. Also supports guild names such as azorius, dimir, rakdos, gruul, selesnya, orzhov, izzet, golgari, boros, and simic.
+          schema:
+            type: string
+
         - name: includeExtras
           in: query
           required: false
-          description: Whether to include extras such as tokens, emblems, and other special non-main-set objects. For prerelease,
-            sealed, draft, and normal set analysis, use false unless the user explicitly asks for extras.
+          description: Whether to include extras such as tokens, emblems, and other special non-main-set objects. For prerelease, sealed, draft, and normal set analysis, use false unless the user explicitly asks for extras.
           schema:
             type: boolean
             default: false
+
         - name: includeVariations
           in: query
           required: false
-          description: Whether to include alternate versions, variants, showcase cards, promos, and other variant printings. For
-            prerelease, sealed, draft, and normal set analysis, use false unless the user explicitly asks for variants
-            or the complete Scryfall listing.
+          description: Whether to include alternate versions, variants, showcase cards, promos, and other variant printings. For prerelease, sealed, draft, and normal set analysis, use false unless the user explicitly asks for variants or the complete Scryfall listing.
           schema:
             type: boolean
             default: false
+
       responses:
         "200":
-          description: Compact set card list returned successfully.
+          description: Compact paginated set card list returned successfully.
           content:
             application/json:
               schema:
@@ -147,9 +199,74 @@ paths:
                   name:
                     type: string
                     description: Full set name.
+                  scryfall:
+                    type: string
+                    format: uri
+                    description: Scryfall page URL for the set.
+                  view:
+                    type: string
+                    enum:
+                      - limited
+                      - names
+                    description: Response detail level used.
+                  full:
+                    type: boolean
+                    description: Whether the API returned the full filtered list instead of a paginated page. This should be false for Custom GPT calls.
+                  includeExtras:
+                    type: boolean
+                    description: Whether extras were included.
+                  includeVariations:
+                    type: boolean
+                    description: Whether variations were included.
+                  filters:
+                    type: object
+                    additionalProperties: false
+                    description: Filters applied to the result.
+                    properties:
+                      rarity:
+                        type: array
+                        items:
+                          type: string
+                      color:
+                        type: array
+                        items:
+                          type: string
+                      colorPair:
+                        type: array
+                        items:
+                          type: string
+                  totalCardsInSet:
+                    type: integer
+                    description: Total cards fetched from Scryfall before filters.
                   count:
                     type: integer
-                    description: Number of cards returned by the endpoint.
+                    description: Number of cards after filters.
+                  returned:
+                    type: integer
+                    description: Number of cards returned in this response.
+                  page:
+                    type:
+                      - integer
+                      - "null"
+                    description: Current page number.
+                  pageSize:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                        enum:
+                          - all
+                    description: Number of cards per page, or "all" when full mode is used outside the Custom GPT.
+                  totalPages:
+                    type: integer
+                    description: Total number of pages after filters.
+                  hasMore:
+                    type: boolean
+                    description: Whether another page is available.
+                  nextPage:
+                    type:
+                      - integer
+                      - "null"
+                    description: Next page number, if hasMore is true.
                   cards:
                     type: array
                     description: Compact list of cards from the requested set.
@@ -200,10 +317,10 @@ paths:
                             - bonus
                         type:
                           type: string
-                          description: Type line.
+                          description: Type line or primary type, depending on view.
                         text:
                           type: string
-                          description: Oracle text or combined face text for multi-face cards.
+                          description: Oracle text or combined face text for multi-face cards. Present in limited view.
                         pt:
                           type: string
                           description: Power/toughness, when present.
@@ -215,7 +332,7 @@ paths:
                           description: Battle defense, when present.
                         keywords:
                           type: array
-                          description: Keyword abilities listed by Scryfall.
+                          description: Keyword abilities listed by Scryfall. Present in limited view.
                           items:
                             type: string
                         number:
@@ -224,11 +341,24 @@ paths:
                 required:
                   - set
                   - name
+                  - scryfall
+                  - view
+                  - full
+                  - includeExtras
+                  - includeVariations
+                  - totalCardsInSet
                   - count
+                  - returned
+                  - page
+                  - pageSize
+                  - totalPages
+                  - hasMore
+                  - nextPage
                   - cards
         "400":
-          description: Missing or invalid set code.
+          description: Missing or invalid set code, view, rarity, color, or color pair.
         "404":
           description: Set not found or no cards found.
         "500":
           description: Internal proxy error.
+```
