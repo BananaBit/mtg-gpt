@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/check-reveals?set=msh",
-      "schedule": "0 12 * * *"
-    }
-  ]
-}
