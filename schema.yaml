@@ -197,6 +197,7 @@ paths:
               - play_booster
               - collector_booster
               - jumpstart_booster
+              - prerelease_pool
             example: play_booster
       responses:
         "200":
@@ -264,6 +265,18 @@ components:
             - string
             - "null"
           description: Type line.
+        is_basic_land:
+          type: boolean
+          description: Whether the card is a basic land.
+        is_land:
+          type: boolean
+          description: Whether the card is any land.
+        is_booster_eligible:
+          type: boolean
+          description: Whether the card is eligible for normal boosters.
+        is_foil_eligible:
+          type: boolean
+          description: Whether the card is eligible to be foil.
         image_uri:
           type:
             - string
@@ -286,6 +299,10 @@ components:
         - cmc
         - colors
         - type_line
+        - is_basic_land
+        - is_land
+        - is_booster_eligible
+        - is_foil_eligible
         - image_uri
         - scryfall_uri
 
@@ -363,9 +380,13 @@ components:
             foil:
               type: boolean
               description: Whether this simulated card came from a foil slot.
+            promo:
+              type: boolean
+              description: Whether this simulated card is a promo.
           required:
             - slot
             - foil
+            - promo
 
     SimulatedPackResponse:
       type: object
@@ -379,6 +400,7 @@ components:
             - play_booster
             - collector_booster
             - jumpstart_booster
+            - prerelease_pool
         count:
           type: integer
         cards:
