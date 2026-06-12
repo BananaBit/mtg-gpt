@@ -2,7 +2,12 @@
   "name": "mtg-scryfall-proxy",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "import:set": "node scripts/import-set-csv.js"
+  },
   "dependencies": {
-    "@upstash/redis": "^1.35.3"
+    "@upstash/redis": "^1.35.3",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^17.4.2"
   }
 }

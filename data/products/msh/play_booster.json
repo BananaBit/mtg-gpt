@@ -1,0 +1,53 @@
+{
+    "set": "msh",
+    "type": "play_booster",
+    "slots": [
+        {
+            "name": "common",
+            "count": 6,
+            "rarity": [
+                "common"
+            ]
+        },
+        {
+            "name": "uncommon",
+            "count": 3,
+            "rarity": [
+                "uncommon"
+            ]
+        },
+        {
+            "name": "rare_or_mythic",
+            "count": 1,
+            "rarity": [
+                "rare",
+                "mythic"
+            ],
+            "weights": {
+                "rare": 7,
+                "mythic": 1
+            }
+        },
+        {
+            "name": "wildcard",
+            "count": 1,
+            "rarity": [
+                "common",
+                "uncommon",
+                "rare",
+                "mythic"
+            ]
+        },
+        {
+            "name": "foil",
+            "count": 1,
+            "rarity": [
+                "common",
+                "uncommon",
+                "rare",
+                "mythic"
+            ],
+            "foil": true
+        }
+    ]
+}
