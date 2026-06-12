@@ -1,20 +1,23 @@
 {
     "set": "msh",
     "type": "play_booster",
+    "notes": "Approximate MSH Play Booster model. Official article confirms 14 cards, including 7 commons and 3 uncommons. Non-common slots should be refined as full collation details are modeled.",
     "slots": [
         {
             "name": "common",
-            "count": 6,
+            "count": 7,
             "rarity": [
                 "common"
-            ]
+            ],
+            "excludeBasicLands": true
         },
         {
             "name": "uncommon",
             "count": 3,
             "rarity": [
                 "uncommon"
-            ]
+            ],
+            "excludeBasicLands": true
         },
         {
             "name": "rare_or_mythic",
@@ -23,6 +26,7 @@
                 "rare",
                 "mythic"
             ],
+            "excludeBasicLands": true,
             "weights": {
                 "rare": 7,
                 "mythic": 1
@@ -30,13 +34,14 @@
         },
         {
             "name": "wildcard",
-            "count": 1,
+            "count": 2,
             "rarity": [
                 "common",
                 "uncommon",
                 "rare",
                 "mythic"
-            ]
+            ],
+            "excludeBasicLands": true
         },
         {
             "name": "foil",
@@ -47,6 +52,7 @@
                 "rare",
                 "mythic"
             ],
+            "excludeBasicLands": true,
             "foil": true
         }
     ]

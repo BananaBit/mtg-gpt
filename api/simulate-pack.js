@@ -61,17 +61,27 @@ async function getCardsForRarity(setCode, rarity) {
 }
 
 async function getPoolForSlot(setCode, slot) {
-    if (slot.weights) {
+    let pool = [];
+
+    if (slot.pool === "basic_land") {
+        const ids = (await redis.get(`index:${setCode}:basic_land`)) || [];
+        pool = await getCardsByIds(setCode, ids);
+    } else if (slot.weights) {
         const rarity = weightedRarityChoice(slot.weights);
-        return getCardsForRarity(setCode, rarity);
+        pool = await getCardsForRarity(setCode, rarity);
+    } else {
+        const rarities = slot.rarity || [];
+        const pools = await Promise.all(
+            rarities.map(rarity => getCardsForRarity(setCode, rarity))
+        );
+        pool = pools.flat();
     }
 
-    const rarities = slot.rarity || [];
-    const pools = await Promise.all(
-        rarities.map(rarity => getCardsForRarity(setCode, rarity))
-    );
+    if (slot.excludeBasicLands) {
+        pool = pool.filter(card => !card.is_basic_land);
+    }
 
-    return pools.flat();
+    return pool;
 }
 
 export default async function handler(req, res) {

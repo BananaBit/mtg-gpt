@@ -10,7 +10,9 @@ const { redis } = await import("../lib/redis.js");
 const [, , csvPath, rawSetCode] = process.argv;
 
 if (!csvPath || !rawSetCode) {
-    console.error("Usage: node scripts/import-set-csv.js ./scryfall-msh.csv msh");
+    console.error(
+        "Usage: node scripts/import-set-csv.js ./data/products/msh/scryfall-msh.csv msh"
+    );
     process.exit(1);
 }
 
@@ -49,21 +51,41 @@ function compactCard(row) {
     const id = String(row.scryfall_id || "").trim();
 
     if (!id) {
-        throw new Error(`Missing scryfall_id for row: ${JSON.stringify(row)}`);
+        throw new Error(
+            `Missing scryfall_id for row: ${JSON.stringify(row)}`
+        );
     }
+
+    const typeLine = String(row.type_line || "").trim();
+    const isBasicLand = typeLine.startsWith("Basic Land");
 
     return {
         id,
         set: String(row.set || setCode).toLowerCase(),
         name: String(row.name || "").trim(),
         number: String(row.collector_number || "").trim(),
+
         rarity: normalizeRarity(row.rarity),
-        mana_cost: String(row.mana_cost || "").trim() || null,
-        cmc: row.cmc === "" || row.cmc == null ? null : Number(row.cmc),
+
+        mana_cost:
+            String(row.mana_cost || "").trim() || null,
+
+        cmc:
+            row.cmc === "" || row.cmc == null
+                ? null
+                : Number(row.cmc),
+
         colors: parseColorsFromManaCost(row.mana_cost),
-        type_line: String(row.type_line || "").trim() || null,
-        image_uri: String(row.image_uri || "").trim() || null,
-        scryfall_uri: String(row.scryfall_uri || "").trim() || null
+
+        type_line: typeLine || null,
+
+        is_basic_land: isBasicLand,
+
+        image_uri:
+            String(row.image_uri || "").trim() || null,
+
+        scryfall_uri:
+            String(row.scryfall_uri || "").trim() || null
     };
 }
 
@@ -76,7 +98,13 @@ async function readCsv(path) {
 
     await new Promise((resolve, reject) => {
         fs.createReadStream(path)
-            .pipe(parse({ columns: true, skip_empty_lines: true, trim: true }))
+            .pipe(
+                parse({
+                    columns: true,
+                    skip_empty_lines: true,
+                    trim: true
+                })
+            )
             .on("data", row => rows.push(row))
             .on("error", reject)
             .on("end", resolve);
@@ -85,34 +113,52 @@ async function readCsv(path) {
     return rows;
 }
 
-function addToArrayIndex(indexes, key, id) {
-    if (!indexes[key]) indexes[key] = [];
-    indexes[key].push(id);
+function queueIndex(indexes, key, id) {
+    if (!indexes[key]) {
+        indexes[key] = new Set();
+    }
+
+    indexes[key].add(id);
 }
 
 console.log(`Reading CSV: ${csvPath}`);
 
 const rows = await readCsv(csvPath);
+
 console.log(`Read ${rows.length} rows`);
 
 const cards = rows.map(compactCard);
+
 console.log(`Normalized ${cards.length} cards`);
 
 const indexes = {};
 const cardIds = [];
 
-function queueIndex(indexes, key, id) {
-    if (!indexes[key]) indexes[key] = new Set();
-    indexes[key].add(id);
-}
-
 for (const card of cards) {
     cardIds.push(card.id);
 
-    queueIndex(indexes, `index:${setCode}:rarity:${card.rarity}`, card.id);
+    queueIndex(
+        indexes,
+        `index:${setCode}:rarity:${card.rarity}`,
+        card.id
+    );
 
-    for (const color of card.colors.length ? card.colors : ["C"]) {
-        queueIndex(indexes, `index:${setCode}:color:${color}`, card.id);
+    if (card.is_basic_land) {
+        queueIndex(
+            indexes,
+            `index:${setCode}:basic_land`,
+            card.id
+        );
+    }
+
+    for (const color of card.colors.length
+        ? card.colors
+        : ["C"]) {
+        queueIndex(
+            indexes,
+            `index:${setCode}:color:${color}`,
+            card.id
+        );
     }
 }
 
@@ -120,33 +166,60 @@ console.log("Writing cards to Redis...");
 
 const BATCH_SIZE = 50;
 
-for (let i = 0; i < cards.length; i += BATCH_SIZE) {
+for (
+    let i = 0;
+    i < cards.length;
+    i += BATCH_SIZE
+) {
     const batch = cards.slice(i, i + BATCH_SIZE);
+
     const pipeline = redis.pipeline();
 
     for (const card of batch) {
-        pipeline.set(`card:${setCode}:${card.id}`, card);
-        pipeline.set(`index:${setCode}:name:${slugify(card.name)}`, card.id);
-        pipeline.set(`index:${setCode}:number:${card.number}`, card.id);
+        pipeline.set(
+            `card:${setCode}:${card.id}`,
+            card
+        );
+
+        pipeline.set(
+            `index:${setCode}:name:${slugify(card.name)}`,
+            card.id
+        );
+
+        pipeline.set(
+            `index:${setCode}:number:${card.number}`,
+            card.id
+        );
     }
 
     await pipeline.exec();
 
-    console.log(`Wrote cards ${i + 1}-${Math.min(i + BATCH_SIZE, cards.length)} of ${cards.length}`);
+    console.log(
+        `Wrote cards ${i + 1}-${Math.min(
+            i + BATCH_SIZE,
+            cards.length
+        )} of ${cards.length}`
+    );
 }
 
 console.log("Writing set indexes...");
 
 const indexPipeline = redis.pipeline();
 
-indexPipeline.set(`set:${setCode}:cards`, cardIds);
+indexPipeline.set(
+    `set:${setCode}:cards`,
+    cardIds
+);
 
-indexPipeline.set(`set:${setCode}:meta`, {
-    set: setCode,
-    cardCount: cards.length,
-    importedAt: new Date().toISOString(),
-    source: csvPath
-});
+indexPipeline.set(
+    `set:${setCode}:meta`,
+    {
+        set: setCode,
+        cardCount: cards.length,
+        importedAt: new Date().toISOString(),
+        source: csvPath
+    }
+);
 
 for (const [key, ids] of Object.entries(indexes)) {
     indexPipeline.set(key, [...ids]);
@@ -154,5 +227,8 @@ for (const [key, ids] of Object.entries(indexes)) {
 
 await indexPipeline.exec();
 
-console.log(`Imported ${cards.length} cards into set:${setCode}`);
+console.log(
+    `Imported ${cards.length} cards into set:${setCode}`
+);
+
 process.exit(0);
