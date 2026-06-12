@@ -1,59 +1,36 @@
 {
-    "set": "msh",
-    "type": "play_booster",
-    "notes": "Approximate MSH Play Booster model. Official article confirms 14 cards, including 7 commons and 3 uncommons. Non-common slots should be refined as full collation details are modeled.",
-    "slots": [
-        {
-            "name": "common",
-            "count": 7,
-            "rarity": [
-                "common"
-            ],
-            "excludeBasicLands": true
-        },
-        {
-            "name": "uncommon",
-            "count": 3,
-            "rarity": [
-                "uncommon"
-            ],
-            "excludeBasicLands": true
-        },
-        {
-            "name": "rare_or_mythic",
-            "count": 1,
-            "rarity": [
-                "rare",
-                "mythic"
-            ],
-            "excludeBasicLands": true,
-            "weights": {
-                "rare": 7,
-                "mythic": 1
-            }
-        },
-        {
-            "name": "wildcard",
-            "count": 2,
-            "rarity": [
-                "common",
-                "uncommon",
-                "rare",
-                "mythic"
-            ],
-            "excludeBasicLands": true
-        },
-        {
-            "name": "foil",
-            "count": 1,
-            "rarity": [
-                "common",
-                "uncommon",
-                "rare",
-                "mythic"
-            ],
-            "excludeBasicLands": true,
-            "foil": true
-        }
-    ]
+  "set": "msh",
+  "type": "play_booster",
+  "notes": "Approximate MSH Play Booster model. Uses named card pools instead of rarity-only filters. Refine product-specific slot rules as official collation details are encoded.",
+  "slots": [
+    {
+      "name": "common",
+      "count": 7,
+      "pool": "common_nonland"
+    },
+    {
+      "name": "uncommon",
+      "count": 3,
+      "pool": "uncommon_nonland"
+    },
+    {
+      "name": "rare_or_mythic",
+      "count": 1,
+      "poolWeights": {
+        "rare_nonland": 7,
+        "mythic_nonland": 1
+      }
+    },
+    {
+      "name": "wildcard",
+      "count": 2,
+      "pool": "booster_eligible"
+    },
+    {
+      "name": "foil",
+      "count": 1,
+      "pool": "foil_eligible",
+      "foil": true
+    }
+  ]
 }

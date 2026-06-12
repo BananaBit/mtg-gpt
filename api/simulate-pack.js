@@ -30,6 +30,20 @@ function weightedRarityChoice(weights) {
     return entries[0][0];
 }
 
+function weightedChoice(weights) {
+    const entries = Object.entries(weights);
+    const total = entries.reduce((sum, [, weight]) => sum + Number(weight), 0);
+
+    let roll = Math.random() * total;
+
+    for (const [key, weight] of entries) {
+        roll -= Number(weight);
+        if (roll <= 0) return key;
+    }
+
+    return entries[0][0];
+}
+
 async function loadProductConfig(setCode, type) {
     const filePath = path.join(
         process.cwd(),
@@ -60,12 +74,19 @@ async function getCardsForRarity(setCode, rarity) {
     return getCardsByIds(setCode, ids);
 }
 
+async function getCardsForPool(setCode, poolName) {
+    const ids = (await redis.get(`index:${setCode}:pool:${poolName}`)) || [];
+    return getCardsByIds(setCode, ids);
+}
+
 async function getPoolForSlot(setCode, slot) {
     let pool = [];
 
-    if (slot.pool === "basic_land") {
-        const ids = (await redis.get(`index:${setCode}:basic_land`)) || [];
-        pool = await getCardsByIds(setCode, ids);
+    if (slot.poolWeights) {
+        const poolName = weightedChoice(slot.poolWeights);
+        pool = await getCardsForPool(setCode, poolName);
+    } else if (slot.pool) {
+        pool = await getCardsForPool(setCode, slot.pool);
     } else if (slot.weights) {
         const rarity = weightedRarityChoice(slot.weights);
         pool = await getCardsForRarity(setCode, rarity);
@@ -82,6 +103,51 @@ async function getPoolForSlot(setCode, slot) {
     }
 
     return pool;
+}
+
+async function simulateProduct(setCode, config) {
+    const cards = [];
+
+    if (config.slots) {
+        const usedIds = new Set();
+        for (const slot of config.slots) {
+            const pool = await getPoolForSlot(setCode, slot);
+            const picked = sample(pool, slot.count, usedIds);
+
+            for (const card of picked) {
+                cards.push({
+                    slot: slot.name,
+                    foil: Boolean(slot.foil),
+                    promo: Boolean(slot.promo),
+                    ...card
+                });
+            }
+        }
+    } else if (config.contents) {
+        for (const item of config.contents) {
+            if (item.type) {
+                const nestedConfig = await loadProductConfig(setCode, item.type);
+                for (let i = 0; i < item.count; i++) {
+                    const nestedCards = await simulateProduct(setCode, nestedConfig);
+                    cards.push(...nestedCards);
+                }
+            } else if (item.name) {
+                const usedIds = new Set();
+                const pool = await getPoolForSlot(setCode, item);
+                const picked = sample(pool, item.count, usedIds);
+                for (const card of picked) {
+                    cards.push({
+                        slot: item.name,
+                        foil: Boolean(item.foil),
+                        promo: Boolean(item.promo),
+                        ...card
+                    });
+                }
+            }
+        }
+    }
+
+    return cards;
 }
 
 export default async function handler(req, res) {
@@ -103,21 +169,7 @@ export default async function handler(req, res) {
         }
 
         const config = await loadProductConfig(setCode, type);
-        const usedIds = new Set();
-        const cards = [];
-
-        for (const slot of config.slots) {
-            const pool = await getPoolForSlot(setCode, slot);
-            const picked = sample(pool, slot.count, usedIds);
-
-            for (const card of picked) {
-                cards.push({
-                    slot: slot.name,
-                    foil: Boolean(slot.foil),
-                    ...card
-                });
-            }
-        }
+        const cards = await simulateProduct(setCode, config);
 
         return res.status(200).json({
             set: setCode,

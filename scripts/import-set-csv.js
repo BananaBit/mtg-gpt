@@ -58,6 +58,9 @@ function compactCard(row) {
 
     const typeLine = String(row.type_line || "").trim();
     const isBasicLand = typeLine.startsWith("Basic Land");
+    const isLand = typeLine.includes("Land");
+    const isBoosterEligible = true;
+    const isFoilEligible = true;
 
     return {
         id,
@@ -80,6 +83,9 @@ function compactCard(row) {
         type_line: typeLine || null,
 
         is_basic_land: isBasicLand,
+        is_land: isLand,
+        is_booster_eligible: isBoosterEligible,
+        is_foil_eligible: isFoilEligible,
 
         image_uri:
             String(row.image_uri || "").trim() || null,
@@ -159,6 +165,36 @@ for (const card of cards) {
             `index:${setCode}:color:${color}`,
             card.id
         );
+    }
+
+    if (card.rarity === "common" && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:common_nonland`, card.id);
+    }
+
+    if (card.rarity === "uncommon" && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:uncommon_nonland`, card.id);
+    }
+
+    if (card.rarity === "rare" && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:rare_nonland`, card.id);
+        queueIndex(indexes, `index:${setCode}:pool:rare_mythic_nonland`, card.id);
+    }
+
+    if (card.rarity === "mythic" && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:mythic_nonland`, card.id);
+        queueIndex(indexes, `index:${setCode}:pool:rare_mythic_nonland`, card.id);
+    }
+
+    if (card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:basic_land`, card.id);
+    }
+
+    if (card.is_booster_eligible && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:booster_eligible`, card.id);
+    }
+
+    if (card.is_foil_eligible && !card.is_basic_land) {
+        queueIndex(indexes, `index:${setCode}:pool:foil_eligible`, card.id);
     }
 }
 

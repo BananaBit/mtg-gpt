@@ -1,0 +1,24 @@
+{
+  "set": "msh",
+  "type": "prerelease_pool",
+  "notes": "A prerelease pool is six Play Boosters plus one traditional foil promo rare or mythic. Basic lands should be treated as available separately for deck building.",
+  "contents": [
+    {
+      "type": "play_booster",
+      "count": 6
+    },
+    {
+      "name": "prerelease_promo",
+      "count": 1,
+      "poolWeights": {
+        "rare_nonland": 7,
+        "mythic_nonland": 1
+      },
+      "foil": true,
+      "promo": true
+    }
+  ],
+  "deckBuildingNotes": {
+    "basicLandsAvailableSeparately": true
+  }
+}
