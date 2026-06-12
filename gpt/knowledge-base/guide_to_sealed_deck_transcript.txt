@@ -1,0 +1,135 @@
+[Music]
+
+This video is brought to you by Squarespace, an all-in-one website platform for entrepreneurs to stand out and succeed online. Squarespace makes it easy to create a beautiful website. More about them at the end of the video.
+
+Many new Magic: The Gathering players ask the question, “How do I build a sealed deck at my local pre-release event?” There are many different ways to play Magic: The Gathering. The sealed deck is a method of choice for pre-release events, some competitive tournaments, and a lot of casual play.
+
+Pre-release events are always a lot of fun and one of the best environments for players, new and old, to play Magic: The Gathering with their local community. If you wish to participate in your local game store’s pre-release event, the format you will be playing is sealed.
+
+So, what is sealed?
+
+Sealed is a Magic: The Gathering format that falls under the large umbrella of Limited, which means a format where you are limited to the cards you open in sealed packs. In sealed, you open six packs of Magic cards, usually all from the same set. The cards you open in these packs form the pool of cards you’ll have to work with, from which you will construct a 40-card-minimum deck.
+
+Because sealed is the format for pre-release, and because it’s a great way to play casual games of Magic among your friends, it’s one of the best formats for a new player to learn. Gameplay in sealed is often more straightforward and focused on the fundamentals of Magic, such as attacking and blocking, and everyone starts at a level playing field, since everyone is opening the same number and kind of packs. All of these features make sealed the best, most accessible format for new players.
+
+This video will tell you everything you need to know to play in your first sealed or pre-release event. I will guide you through deck construction, from opening and sorting your pool to choosing your colors and deciding which cards in those colors you should put in your deck.
+
+[Music]
+
+If you are playing at a pre-release at your local game store, then you will be building a deck using packs from the most recent set. You also receive one randomized promotional card that will be part of your pool. You are allowed to include that card in your deck. Most competitive sealed tournaments also draw on the most recent set as well, though the packs for these events do not provide you with an additional promo card for your pool.
+
+The first thing you’ll want to do before arriving at your local pre-release is to spend a bit of time looking over the complete card list for the most recent set. Yes, there are a lot of them, usually around 250 to 300 cards in a set. But don’t worry: you don’t have to, nor should you even try to, memorize every individual card.
+
+The goal of looking over the set ahead of time is to be a little more familiar with the cards you open in your packs, so as to make the experience of evaluating your card pool and building a deck much easier. If you’re reading every individual card as you open them, you’ll have less time to make decisions about which of them are worth putting in your deck.
+
+The easiest way to look at all the cards in the new set is by pulling up the official card image gallery on the Wizards of the Coast website. The complete set list is sorted by color, and you can also filter your search by color, rarity, or card type for a more refined search. I recommend you filter by rarity when preparing for your pre-release, as it will be easier to absorb the card images you’re looking for when they’re grouped with other similar cards. Think of this like a mnemonic device.
+
+I recommend you start with the commons, since those are the most numerous cards you’ll encounter. Then filter for uncommons, and then, if you have time, look at the rares and mythics. Altogether, looking at the rares and mythics for a new set is certainly exciting, as they are often very cool and powerful cards. But what if I told you these are actually the least important kinds of cards to familiarize yourself with ahead of your event?
+
+It’s true. Your sealed pool is actually going to have fewer rares and mythics than any other card rarity, and you’re less likely to open any specific rare in your packs than you are a specific common or uncommon. You’ll have plenty of time to read and evaluate the rares that you open in your packs once you have them in front of you. But, in preparing for your sealed event, focus your energy on uncommons and commons. Get familiar with those first.
+
+Rules for deck building: now that you have a sense of the cards in the set, the next step will be to learn how they fit together to make a sealed deck. A sealed deck consists of a minimum of 40 cards. You can run more cards if you’d like to, but I strongly suggest you keep your deck to no more than 40 cards so that you will have a better chance of drawing your best cards. This may mean you have to make some tough choices on the last few cuts for your deck, but that’s just part of the process.
+
+Your 40-card deck should consist of 17 lands and 23 non-land cards. The deck will consist entirely of cards you opened in your sealed pool, with one exception: you may add as many basic lands as you wish from the basic land station. The staff running your local pre-release or sealed event will make it very clear where the basic land station is located, but you can always ask them to point you toward it. Any non-basic lands, such as dual lands, as well as all of your non-land cards, will come only from your sealed pool.
+
+Step one: opening and sorting.
+
+It’s time to start opening up your packs. As you do so, I also recommend you sort the cards you open in WUBRG order; that is, white, blue, black, red, and green. You’ll also need a pile for multicolor cards, a pile for colorless cards such as artifacts, and a pile for any non-basic lands. Form these piles of sorted cards as you go, opening a pack and distributing the cards in it into each color.
+
+I also recommend keeping any rares you open separate from the color piles, as these will have the greatest weight on your decision of which colors to run once you begin deck building. Be careful you don’t fall into the trap of getting ahead of yourself by starting to think about deck building while you’re still opening your packs. You might open a premium uncommon card in an early pack, only to find that the later packs don’t offer enough other playable cards in that premium uncommon’s color to build around that card. It’s just best to put any thoughts of deck building out of your mind until you have your whole pool in front of you.
+
+Once you’ve opened and sorted your packs, there’s one more step I recommend taking before starting to build your deck: sort your pool by mana cost. This will make planning out your mana curve much easier. More on this in a moment.
+
+But first, step two: choosing your colors.
+
+In most cases, especially as a newer player, you should try to build a two-color deck. You will likely have one or two colors with more cards than the other colors in your pool. You don’t need to build a deck in the color pair of your two most represented colors, but you will probably choose a color pair that touches at least one of your most prevalent colors.
+
+One of the biggest draws toward a particular color in your pool will be your bomb rares. Bombs are cards that either take over the game if left unanswered or provide you with such a significant advantage the turn they are played that they are capable of swinging a losing game back in your favor. Bombs are often big creatures that are hard to block, such as those with flying and trample; value engines, such as those that repeatedly draw you cards or make creature tokens; or permanents with powerful effects when they enter play. The best bombs do more than one of these things.
+
+Planeswalkers have gotten weaker over the past few years of card design, but a good planeswalker is still among some of the best cards you could open in sealed. This is because they are hard for your opponent to easily remove and provide a significant, repeatable advantage to the game every turn that requires no additional input beyond its casting cost.
+
+A good planeswalker is one that does one or more of the following things: generates card advantage, meaning it provides access to more cards than your opponent has access to, such as by drawing extra cards; impacts the board by either generating creature tokens, removing troublesome permanents, or both; has a high starting loyalty; or has a low casting cost.
+
+Board wipes tend to be another exceptional kind of rare in Limited, as these generate virtual card advantage by answering multiple cards of your opponent’s with a single card of your own.
+
+Bomb cards have always been a significant feature in sealed, since you have a pretty good shot at opening at least one great rare in your six packs. But the bomb-centric nature of sealed has gotten even more pronounced with the switch to Play Boosters in 2024. Between the wildcard slot in a Play Booster pack, the foil slot, and the booster fun slot, all in addition to the ordinary rare slot, it’s possible for a single Play Booster pack to contain as many as four rares. Because you’re much more likely to open a good rare, that means your opponents are also much more likely to open a good rare.
+
+When building your sealed deck, I would try very hard to build a deck that contains as many of your best rares as you can, so that you can keep up with the raw power level of the other players you’ll encounter.
+
+A good rule of thumb for choosing your two colors is this: choose whichever color contains the greatest quantity of bomb rares and the color that’s the most represented. The heavily represented color will provide you with a depth of playable cards, while the color with your bomb rares will provide you with raw power.
+
+If your color with the most bombs does not provide you with enough playable low-rarity cards to reach 23 non-lands, you might be better off picking a deeper color for your second color and simply splashing a third color for the bombs in your shallower color. If your deepest color is also the color with the most bombs, then congratulations: you’ve opened an excellent pool for your sealed event.
+
+So, what’s next?
+
+Step three: building your deck.
+
+Aside from bombs, the best sealed decks have plenty of removal, card advantage, and mana fixing, as well as a nice mana curve and enough creatures with which to reliably win the game. A good sealed deck might be lacking in one or two of these categories, but you can often compensate for that by putting a greater emphasis in the other categories.
+
+Keep in mind that your opponents will have bombs of their own, and you’ll need answers for them. You’ll also need removal in the early game to not die to your opponent’s more aggressive starts. Spot removal is therefore a premium category of card to include in your deck. The best removal spells are those that are flexible and efficient, meaning they can target a wide range of cards and don’t cost very much mana. That said, you will have to work with what you have access to. Running removal spells that are narrower or overcosted is almost always better than not running any removal at all. Removal that comes attached to a creature or that draws you a card is especially powerful.
+
+I talked about card advantage in the context of bombs, but there are other forms of card advantage as well. Even spells that just draw extra cards and do nothing else are often good cards to include in your deck. Card advantage can also take the form of recursion, which means bringing cards you’ve already used back to your hand or into play. Recursive effects get better the more powerful the cards you recur are.
+
+Though you should plan to build a deck consisting of two colors, it is possible to splash a third color if you open enough color-fixing cards, like dual lands, mana rocks, and land tutors, that allow you to easily gain access to your third color without having to add a bunch of basic lands of that color to your mana base. If you can achieve upwards of four or five sources of your splashed color while only running one or two basics in that color, then you should feel free to play a few powerful cards in that third color.
+
+Some Limited environments are easier to splash additional colors in than others, but the basic principle of splashing colors always applies regardless of the format: you need color fixing if you want to play more than two colors. Keep in mind that some color fixing is still valuable in two-color decks, such as dual lands in your color pair, but fixing is mandatory if your goal is to play three or more colors.
+
+Your mana curve is the distribution of cards, especially creatures, in your deck at each mana value. You want to have more cheap cards than you have expensive cards, and ideally you should have more two- and three-mana cards than you do cards of any other mana cost. The reason for this is because you want to use all your mana and cast a relevant card every turn of the game, if possible, starting no later than turn two. If you do not cast a spell before turn four, your chances of winning the game are close to nil.
+
+Lastly, and most importantly, you should build a deck that has plenty of creatures. Creatures are the most important card type in sealed, as the vast majority of sealed games are won through creature combat. If you run out of threats to cast in your game, your opponent will effectively win by default. The minimum number of creatures you should run in your deck is 13, but definitely your deck will have between 16 and 18 creatures that fall all along your mana curve. Two-drop creatures are especially valuable for building your board early in the game.
+
+Cards that generate creature tokens contribute to your creature count. If you have a spell, for instance, that makes two 1/1 creatures, then that spell is just as much of a creature as a card that actually has a creature type. Similarly, lands and other non-creature permanents that can be animated into creatures using an ability also count as creatures.
+
+These days, creatures tend to be much more powerful than they were a decade ago, even at low rarities. It’s therefore important to have creatures in your deck that do more than put a body into play. Creatures that accumulate card advantage, interact with your opponents, or make your other cards more powerful tend to be excellent creatures in Limited.
+
+Remember that, while it’s great to be blessed with a sealed pool with plenty of good cards to choose from, you’ll still want to make sure you run no more than 40 cards in your deck, meaning no more than 23 non-land cards in your deck. When deciding between two different cards, a good tiebreaker is to favor the lower-mana-cost card.
+
+And there you have it. You’ve learned everything you need to know to begin playing in a sealed or pre-release event. Remember that, with each new set, we release a Limited guide to offer intermediate strategy to help you crush your next pre-release or sealed event. So keep your eyes open for those videos, or know that, if you are playing in a flashback sealed event, we have quite the library of them.
+
+Or just watch our own sealed pre-release gameplay, such as our triumphant return to LCI pre-release with Spice8Rack, Aaron Hansen, and Spencer Critton. That gameplay video is linked in this video’s description, or you can just click hereabouts. It’s like an eye. Click the eye. Yeah.
+
+I really need a website already to show off all of my episodes of Shuffle Up & Play, but I don’t know how to make a website. Lucky for me, Squarespace is the best way to make a brand-new, professional-looking, totally customizable website, all without needing to know anything about how websites actually work. It’s perfect for me, the professor, and it’s the sponsor of today’s video.
+
+Seriously, with Squarespace’s guided design systems, Squarespace Blueprint, you’ll get to choose from a wide range of professionally curated layout and styling options to build your very own unique online presence from the ground up. You’ll answer a few questions about your goals, industry, and brand personality. Then you’ll be offered a series of structure and design options tailored to those goals and optimized for every device.
+
+And once you launch your website, you’ll get discovered fast with integrated and optimized SEO tools so that you show up more often to more people and grow the way you want. So, whether you’re a content creator or you have an online business, Squarespace has you covered. You can upload video content directly to your site and organize your library on beautiful video pages. You can even put your video library behind a paywall to make money off of your content.
+
+If you have an online business, you can turn your site into a store for selling your products, from physical goods to digital content to services. Squarespace has all the tools you need to get started. Just go to squarespace.com right now for a free trial, and when you’re ready to launch, go to squarespace.com/tolariancommunitycollege to save 10% off of your first purchase of a website or domain. Thank you, Squarespace, for sponsoring this video.
+
+[Music]
+
+Next time on Shuffle Up & Play:
+
+“What’s up? It’s Shuffle Up & Play with decks that Tolar has built for us.”
+
+“Tolar built the entire pod for how much money?”
+
+“Tolar?”
+
+“$25 each, so total $100.”
+
+“Do you notice how he built the decks for all of us, and he’s the—”
+
+“I did notice that.”
+
+“It looks kind of over.”
+
+“This isn’t Petty Prof anymore. It’s Proper Play Prof. All the P.”
+
+“So much PP.”
+
+“So much PP.”
+
+“He’s showing weakness. Get him.”
+
+“You’ve played your last Shambling Ghast, ’cause it’s Commander.”
+
+“Yes, correct. That’s—am I going to win next turn type face.”
+
+“Oh God, no. You didn’t build it that good.”
+
+“He just called you a Zoomer. You going to take that?”
+
+“Uh, you know, because of that, I’m going to swing at Prof.”
+
+[Laughter]
