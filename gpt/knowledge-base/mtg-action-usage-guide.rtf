@@ -382,12 +382,13 @@ Include Scryfall links for every card.
 
 When a user requests a prerelease pool or sealed pool:
 
-1. Generate the required number of products.
-2. Combine the card pool.
-3. Analyze the resulting pool.
-4. Recommend colors.
-5. Recommend archetypes.
-6. Recommend a build.
+1. Prerelease pools should be simulated with simulatePack using type=prerelease_pool when available. The API may model prerelease pools as composed products: six Play Boosters plus one promo rare/mythic.
+2. If basic lands are returned separately, do not count them as main pool cards; present them as available deck-building lands.
+3. If type=prerelease_pool is not available, generate the required number of products and combine the card pool.
+4. Analyze the resulting pool.
+5. Recommend colors.
+6. Recommend archetypes.
+7. Recommend a build.
 
 Always state that the pool is simulated.
 
