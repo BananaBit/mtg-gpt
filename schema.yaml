@@ -412,3 +412,33 @@ components:
         - type
         - count
         - cards
+  /api/collection/search:
+    get:
+      operationId: searchCollection
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Collection search result
+
+  /api/collection/check-deck:
+    post:
+      operationId: checkDeckAgainstCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                decklist:
+                  type: string
+              required:
+                - decklist
+      responses:
+        "200":
+          description: Deck ownership comparison

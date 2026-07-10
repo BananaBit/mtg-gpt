@@ -6,8 +6,10 @@
     "import:set": "node scripts/import-set-csv.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.2",
     "@upstash/redis": "^1.35.3",
     "csv-parse": "^5.6.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "formidable": "^3.5.4"
   }
 }
