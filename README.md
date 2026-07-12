@@ -2,6 +2,60 @@
 
 A lightweight Vercel proxy for the [Scryfall API](https://scryfall.com/docs/api), designed for ChatGPT Custom GPT Actions and MTG assistant workflows.
 
+## Middleware architecture
+
+The service is organized into three API domains:
+
+- `/api/cards` provides Scryfall-backed search and canonical card details.
+- `/api/collection` imports and queries a Supabase-backed physical collection.
+- `/api/decks` parses, analyzes, compares, and diagnoses decklists.
+
+ManaBox remains the scanning/export tool. A synchronized import is a complete snapshot: current entries are inserted or updated, missing entries are archived, and previous import history is retained.
+
+## Environment and Supabase setup
+
+Required middleware variables are `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `GPT_ACTION_API_KEY`, and `GPT_IMPORT_API_KEY`. Existing Redis-backed endpoints additionally require their Upstash variables. Optional limits include `IMPORT_MAX_BYTES`, `IMPORT_MAX_ROWS`, and `SCRYFALL_USER_AGENT`.
+
+Apply the SQL files in `supabase/migrations` in numeric order before deploying. The service-role credential is server-only and must never be included in the GPT action schema.
+
+## Collection import
+
+The JSON import contract accepts raw CSV content:
+
+```json
+{
+  "source": "manabox",
+  "filename": "collection.csv",
+  "csv": "Name,Set code,Collector Number,Quantity\n...",
+  "mode": "synchronize",
+  "confirmed": true
+}
+```
+
+```bash
+curl --fail-with-body -X POST \
+  -H "Authorization: Bearer $GPT_IMPORT_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data-binary @request.json \
+  "https://your-domain.vercel.app/api/collection/import"
+```
+
+For local diagnosis, run `npm run import:manabox -- ./collection.csv`. Both paths use the same import service.
+
+The GPT must invoke an import only after an explicit import or synchronization request. Uploading, inspecting, or counting a CSV does not constitute permission.
+
+## Collection and deck actions
+
+Read actions authenticate with `Authorization: Bearer $GPT_ACTION_API_KEY` (or `X-API-Key`). Collection search supports name, printing, location, finish, condition, and language filters. The stats route returns totals and grouped counts. Deck checking deterministically partitions cards into owned, partially owned, and missing quantities.
+
+Decklists accept `1 Card`, `1x Card`, `1 Card (SET)`, and `1 Card (SET) 123`, with Commander, Mainboard, Sideboard, Maybeboard, and Companion sections. Deck analysis returns structured facts; comparison returns deterministic differences; optimization intentionally returns diagnostics rather than claiming a universally perfect deck.
+
+## Testing and deployment
+
+Run `npm test`. Deploy only after applying migrations and validating a sanitized import. Then update the Custom GPT with `schema.yaml` and test explicit import, analysis-only, duplicate, invalid, changed-quantity, removed-card, and reintroduced-card cases.
+
+If imports fail, verify migration order, server credentials, CSV headers, confirmation, request size, and row limits. A rejected or failed import does not replace the active snapshot.
+
 The proxy adds the HTTP headers Scryfall expects, which helps avoid `403 Forbidden` issues when calling Scryfall directly from a GPT Action.
 
 ---

@@ -7,6 +7,9 @@ info:
 servers:
   - url: https://mtg-gpt-five.vercel.app
 
+security:
+  - bearerAuth: []
+
 paths:
   /api/set-cards:
     get:
@@ -211,7 +214,157 @@ paths:
         "500":
           description: Internal server error.
 
+  /api/cards/search:
+    get:
+      operationId: searchCards
+      summary: Search canonical Magic cards
+      parameters:
+        - { name: name, in: query, schema: { type: string } }
+        - { name: set, in: query, schema: { type: string } }
+        - { name: number, in: query, schema: { type: string } }
+        - { name: color, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Matching cards }
+        "401": { description: Authentication failed }
+
+  /api/cards/details:
+    get:
+      operationId: getCardDetails
+      summary: Get canonical card details
+      parameters:
+        - { name: id, in: query, schema: { type: string } }
+        - { name: name, in: query, schema: { type: string } }
+        - { name: set, in: query, schema: { type: string } }
+        - { name: number, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Full Scryfall card details }
+        "404": { description: Card not found }
+
+  /api/collection/import:
+    post:
+      operationId: importCollection
+      summary: Import a physical card collection
+      description: Imports and synchronizes a complete collection export. Invoke only after the user explicitly requests an import or synchronization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [source, csv, mode, confirmed]
+              properties:
+                source: { type: string, enum: [manabox] }
+                filename: { type: string }
+                csv: { type: string, description: Raw CSV content from the ManaBox export. }
+                mode: { type: string, enum: [synchronize] }
+                confirmed: { type: boolean, const: true }
+      responses:
+        "200": { description: Import completed or was already current }
+        "400": { description: Invalid or unsupported collection export }
+        "401": { description: Authentication failed }
+
+  /api/collection/search:
+    get:
+      operationId: searchCollection
+      summary: Search active owned cards
+      parameters:
+        - { name: name, in: query, schema: { type: string } }
+        - { name: scryfall_id, in: query, schema: { type: string } }
+        - { name: set, in: query, schema: { type: string } }
+        - { name: collector_number, in: query, schema: { type: string } }
+        - { name: location, in: query, schema: { type: string } }
+        - { name: finish, in: query, schema: { type: string, enum: [nonfoil, foil, etched] } }
+        - { name: condition, in: query, schema: { type: string } }
+        - { name: language, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Matching active collection entries }
+
+  /api/collection/stats:
+    get:
+      operationId: getCollectionStats
+      summary: Get physical collection statistics
+      responses:
+        "200": { description: Collection totals and grouped statistics }
+
+  /api/collection/check-deck:
+    post:
+      operationId: checkDeckAgainstCollection
+      summary: Check deterministic deck ownership coverage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decklist]
+              properties:
+                decklist: { type: string }
+                match_printing: { type: boolean, default: false }
+                include_locations: { type: boolean, default: true }
+      responses:
+        "200": { description: Owned, partially owned, and missing cards }
+
+  /api/decks/analyze:
+    post:
+      operationId: analyzeDeck
+      summary: Analyze a decklist into structured facts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decklist]
+              properties:
+                decklist: { type: string }
+                format: { type: string }
+                include_collection: { type: boolean, default: false }
+      responses:
+        "200": { description: Structured deck analysis }
+
+  /api/decks/compare:
+    post:
+      operationId: compareDecks
+      summary: Compare two decklists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deck_a, deck_b]
+              properties:
+                deck_a: { type: string }
+                deck_b: { type: string }
+                include_collection: { type: boolean, default: false }
+      responses:
+        "200": { description: Structured deck comparison }
+
+  /api/decks/optimize:
+    post:
+      operationId: optimizeDeck
+      summary: Produce structured deck optimization diagnostics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decklist]
+              properties:
+                decklist: { type: string }
+                format: { type: string }
+                constraints: { type: object, additionalProperties: true }
+      responses:
+        "200": { description: Candidate changes, diagnostics, and warnings }
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   schemas:
     CompactCard:
       type: object
@@ -442,3 +595,65 @@ components:
       responses:
         "200":
           description: Deck ownership comparison
+  /api/collection/import:
+    post:
+      operationId: importCollection
+      summary: Import collection CSV (ManaBox format)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                confirmed:
+                  type: boolean
+                source:
+                  type: string
+                filename:
+                  type: string
+              required:
+                - file
+                - confirmed
+      responses:
+        "200":
+          description: Import processed successfully
+        "400":
+          description: Invalid request or validation errors
+        "401":
+          description: Unauthorized
+        "500":
+          description: Server error
+  /api/collection/stats:
+    get:
+      operationId: getCollectionStats
+      summary: Retrieve collection statistics
+      responses:
+        "200":
+          description: Collection statistics summary
+        "401":
+          description: Unauthorized
+        "500":
+          description: Server error
+  /api/collection/by-location:
+    get:
+      operationId: getCollectionByLocation
+      summary: Get cards by location
+      parameters:
+        - name: location
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cards at specified location
+        "400":
+          description: Missing location parameter
+        "401":
+          description: Unauthorized
+        "500":
+          description: Server error

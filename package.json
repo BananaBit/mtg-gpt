@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "import:set": "node scripts/import-set-csv.js"
+    "import:set": "node scripts/import-set-csv.js",
+    "import:manabox": "node scripts/import-manabox-local.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.2",
