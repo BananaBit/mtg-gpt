@@ -1,277 +1,113 @@
 openapi: 3.1.0
 info:
-  title: MTG GPT Card Database
-  description: Redis-backed Magic card database and pack simulator for Custom GPT Actions. Compact card data comes from the imported Scryfall CSV in Upstash; full card details come from Scryfall on demand.
-  version: 2.0.0
+  title: MTG GPT Middleware API
+  version: 3.0.0
+  description: >
+    Magic the Gathering middleware for canonical card lookup, physical
+    collection synchronization, deterministic ownership checks, structured
+    deck analysis, and the existing Redis-backed set and pack tools.
 
 servers:
   - url: https://mtg-gpt-five.vercel.app
 
-security:
-  - bearerAuth: []
-
 paths:
-  /api/set-cards:
-    get:
-      operationId: getSetCards
-      summary: Get cards from an imported set database
-      description: Returns compact card records from the Redis-backed set database. Use this for set browsing, filtering by rarity/color, limited analysis, and finding candidate cards before requesting full Scryfall details.
-      parameters:
-        - name: set
-          in: query
-          required: true
-          description: Lowercase set code, for example "msh".
-          schema:
-            type: string
-            example: msh
-        - name: page
-          in: query
-          required: false
-          description: Page number to retrieve. Starts at 1.
-          schema:
-            type: integer
-            default: 1
-            minimum: 1
-        - name: pageSize
-          in: query
-          required: false
-          description: Number of cards per page. Maximum supported by the API is 100.
-          schema:
-            type: integer
-            default: 75
-            minimum: 1
-            maximum: 100
-        - name: rarity
-          in: query
-          required: false
-          description: Optional rarity filter. Use common, uncommon, rare, or mythic.
-          schema:
-            type: string
-            enum:
-              - common
-              - uncommon
-              - rare
-              - mythic
-        - name: color
-          in: query
-          required: false
-          description: Optional color filter. Use W, U, B, R, G, or C for colorless.
-          schema:
-            type: string
-            enum:
-              - W
-              - U
-              - B
-              - R
-              - G
-              - C
-      responses:
-        "200":
-          description: Compact paginated card list.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SetCardsResponse"
-        "400":
-          description: Missing or invalid set code.
-        "500":
-          description: Internal server error.
-
-  /api/card:
-    get:
-      operationId: getImportedCard
-      summary: Get one compact imported card
-      description: Looks up one compact card from the Redis-backed database by Scryfall ID, exact imported name, or collector number.
-      parameters:
-        - name: set
-          in: query
-          required: true
-          description: Lowercase set code, for example "msh".
-          schema:
-            type: string
-            example: msh
-        - name: id
-          in: query
-          required: false
-          description: Scryfall UUID for the card.
-          schema:
-            type: string
-        - name: name
-          in: query
-          required: false
-          description: Exact card name as imported from the CSV.
-          schema:
-            type: string
-        - name: number
-          in: query
-          required: false
-          description: Collector number as imported from the CSV.
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Compact imported card found.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  set:
-                    type: string
-                  card:
-                    $ref: "#/components/schemas/CompactCard"
-                required:
-                  - set
-                  - card
-        "400":
-          description: Missing set code or missing lookup parameter.
-        "404":
-          description: Card not found.
-        "500":
-          description: Internal server error.
-
-  /api/card-detail:
-    get:
-      operationId: getFullScryfallCardDetail
-      summary: Get full Scryfall details for a card
-      description: Resolves a card by Scryfall ID, or by set plus name from the imported database, then fetches the full card object from Scryfall. Use this when oracle text, card faces, rulings URI, legalities, or other detailed fields are needed.
-      parameters:
-        - name: id
-          in: query
-          required: false
-          description: Scryfall UUID for the card. Preferred when already known.
-          schema:
-            type: string
-        - name: set
-          in: query
-          required: false
-          description: Lowercase set code, required when looking up by name.
-          schema:
-            type: string
-            example: msh
-        - name: name
-          in: query
-          required: false
-          description: Exact card name from the imported database. Requires set.
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Full Scryfall card object.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-                properties:
-                  card:
-                    type: object
-                    additionalProperties: true
-                required:
-                  - card
-        "400":
-          description: Provide either id, or set plus name.
-        "404":
-          description: Card not found in local database.
-        "500":
-          description: Scryfall or proxy error.
-
-  /api/simulate-pack:
-    get:
-      operationId: simulatePack
-      summary: Simulate opening a booster pack
-      description: Simulates a booster pack using the imported card database and a local product collation config. Use this whenever the user asks to open, simulate, generate, or build a pack from a set.
-      parameters:
-        - name: set
-          in: query
-          required: true
-          description: Lowercase set code, for example "msh".
-          schema:
-            type: string
-            example: msh
-        - name: type
-          in: query
-          required: true
-          description: Product type to simulate.
-          schema:
-            type: string
-            enum:
-              - play_booster
-              - collector_booster
-              - jumpstart_booster
-              - prerelease_pool
-            example: play_booster
-      responses:
-        "200":
-          description: Simulated booster pack.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimulatedPackResponse"
-        "400":
-          description: Missing set code or invalid product type.
-        "500":
-          description: Internal server error.
-
   /api/cards/search:
     get:
       operationId: searchCards
       summary: Search canonical Magic cards
+      description: Searches Scryfall or the imported set index by card identifiers and filters.
+      security:
+        - bearerAuth: []
       parameters:
         - { name: name, in: query, schema: { type: string } }
         - { name: set, in: query, schema: { type: string } }
         - { name: number, in: query, schema: { type: string } }
+        - { name: id, in: query, schema: { type: string, format: uuid } }
         - { name: color, in: query, schema: { type: string } }
         - { name: type, in: query, schema: { type: string } }
       responses:
-        "200": { description: Matching cards }
-        "401": { description: Authentication failed }
+        "200":
+          description: Matching cards
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, items]
+                properties:
+                  success: { type: boolean, const: true }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/CardRecord" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerError" }
 
   /api/cards/details:
     get:
       operationId: getCardDetails
-      summary: Get canonical card details
+      summary: Get canonical details for one card
+      description: Resolve by Scryfall ID, exact name, or set plus collector number.
+      security:
+        - bearerAuth: []
       parameters:
-        - { name: id, in: query, schema: { type: string } }
+        - { name: id, in: query, schema: { type: string, format: uuid } }
         - { name: name, in: query, schema: { type: string } }
         - { name: set, in: query, schema: { type: string } }
         - { name: number, in: query, schema: { type: string } }
       responses:
-        "200": { description: Full Scryfall card details }
+        "200":
+          description: Full Scryfall card details
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, card]
+                properties:
+                  success: { type: boolean, const: true }
+                  card: { $ref: "#/components/schemas/CardRecord" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { description: Card not found }
 
   /api/collection/import:
     post:
       operationId: importCollection
-      summary: Import a physical card collection
-      description: Imports and synchronizes a complete collection export. Invoke only after the user explicitly requests an import or synchronization.
+      summary: Synchronize a physical collection from ManaBox
+      description: >
+        Imports a complete physical collection snapshot. Use only when the
+        user explicitly asks to import or synchronize an attached ManaBox CSV.
+        Missing active entries are archived, not deleted. This operation
+        requires the import credential rather than the read-only credential.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: false
-              required: [source, csv, mode, confirmed]
-              properties:
-                source: { type: string, enum: [manabox] }
-                filename: { type: string }
-                csv: { type: string, description: Raw CSV content from the ManaBox export. }
-                mode: { type: string, enum: [synchronize] }
-                confirmed: { type: boolean, const: true }
+              $ref: "#/components/schemas/CollectionImportRequest"
       responses:
-        "200": { description: Import completed or was already current }
-        "400": { description: Invalid or unsupported collection export }
-        "401": { description: Authentication failed }
+        "200":
+          description: Import completed, was rejected by validation, or was already current
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/CollectionImportCompleted"
+                  - $ref: "#/components/schemas/CollectionImportUnchanged"
+                  - $ref: "#/components/schemas/CollectionImportRejected"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "413": { description: Request exceeds the configured size limit }
 
   /api/collection/search:
     get:
       operationId: searchCollection
-      summary: Search active owned cards
+      summary: Search active physical collection entries
+      security:
+        - bearerAuth: []
       parameters:
-        - { name: name, in: query, schema: { type: string } }
-        - { name: scryfall_id, in: query, schema: { type: string } }
+        - { name: name, in: query, description: Partial card-name match, schema: { type: string } }
+        - { name: scryfall_id, in: query, schema: { type: string, format: uuid } }
         - { name: set, in: query, schema: { type: string } }
         - { name: collector_number, in: query, schema: { type: string } }
         - { name: location, in: query, schema: { type: string } }
@@ -279,381 +115,384 @@ paths:
         - { name: condition, in: query, schema: { type: string } }
         - { name: language, in: query, schema: { type: string } }
       responses:
-        "200": { description: Matching active collection entries }
+        "200":
+          description: Matching active ownership entries and quantity totals
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollectionSearchResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/collection/stats:
     get:
       operationId: getCollectionStats
-      summary: Get physical collection statistics
+      summary: Get active collection statistics
+      security:
+        - bearerAuth: []
       responses:
-        "200": { description: Collection totals and grouped statistics }
+        "200":
+          description: Collection totals, grouped counts, and latest import
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollectionStatsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/collection/check-deck:
     post:
       operationId: checkDeckAgainstCollection
       summary: Check deterministic deck ownership coverage
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [decklist]
               properties:
                 decklist: { type: string }
                 match_printing: { type: boolean, default: false }
                 include_locations: { type: boolean, default: true }
       responses:
-        "200": { description: Owned, partially owned, and missing cards }
+        "200":
+          description: Owned, partially owned, and missing quantities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeckCoverageResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/decks/analyze:
     post:
       operationId: analyzeDeck
       summary: Analyze a decklist into structured facts
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [decklist]
               properties:
                 decklist: { type: string }
                 format: { type: string }
                 include_collection: { type: boolean, default: false }
       responses:
-        "200": { description: Structured deck analysis }
+        "200": { description: Structured deck facts and optional collection coverage }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/decks/compare:
     post:
       operationId: compareDecks
       summary: Compare two decklists
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [deck_a, deck_b]
               properties:
                 deck_a: { type: string }
                 deck_b: { type: string }
                 include_collection: { type: boolean, default: false }
       responses:
-        "200": { description: Structured deck comparison }
+        "200": { description: Shared cards, deck differences, and optional collection coverage }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/decks/optimize:
     post:
       operationId: optimizeDeck
-      summary: Produce structured deck optimization diagnostics
+      summary: Produce structured optimization diagnostics
+      description: Returns diagnostics and candidate-change structures; it does not claim to construct a universally optimal deck.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [decklist]
               properties:
                 decklist: { type: string }
                 format: { type: string }
-                constraints: { type: object, additionalProperties: true }
+                constraints:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                    owned_only: { type: boolean }
+                    maximum_additions: { type: integer, minimum: 0 }
+                    preserve_theme: { type: boolean }
       responses:
-        "200": { description: Candidate changes, diagnostics, and warnings }
+        "200": { description: Suggested additions/removals, diagnostics, and warnings }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/set-cards:
+    get:
+      operationId: getSetCards
+      summary: Get cards from an imported Redis set database
+      security: []
+      parameters:
+        - { name: set, in: query, required: true, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 75 } }
+        - { name: rarity, in: query, schema: { type: string, enum: [common, uncommon, rare, mythic] } }
+        - { name: color, in: query, schema: { type: string, enum: [W, U, B, R, G, C] } }
+      responses:
+        "200": { description: Compact paginated card list }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/simulate-pack:
+    get:
+      operationId: simulatePack
+      summary: Simulate a booster product from imported set data
+      security: []
+      parameters:
+        - { name: set, in: query, required: true, schema: { type: string } }
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [play_booster, collector_booster, jumpstart_booster, prerelease_pool]
+      responses:
+        "200": { description: Simulated pack or prerelease pool }
+        "400": { $ref: "#/components/responses/BadRequest" }
 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-  schemas:
-    CompactCard:
-      type: object
-      additionalProperties: false
-      properties:
-        id:
-          type: string
-          description: Scryfall UUID.
-        set:
-          type: string
-          description: Set code.
-        name:
-          type: string
-          description: Card name.
-        number:
-          type: string
-          description: Collector number.
-        rarity:
-          type: string
-          description: Card rarity.
-          enum:
-            - common
-            - uncommon
-            - rare
-            - mythic
-            - special
-            - bonus
-        mana_cost:
-          type:
-            - string
-            - "null"
-          description: Mana cost.
-        cmc:
-          type:
-            - number
-            - "null"
-          description: Mana value.
-        colors:
-          type: array
-          description: Parsed colors from mana cost. Colorless cards may have an empty array.
-          items:
-            type: string
-            enum:
-              - W
-              - U
-              - B
-              - R
-              - G
-        type_line:
-          type:
-            - string
-            - "null"
-          description: Type line.
-        is_basic_land:
-          type: boolean
-          description: Whether the card is a basic land.
-        is_land:
-          type: boolean
-          description: Whether the card is any land.
-        is_booster_eligible:
-          type: boolean
-          description: Whether the card is eligible for normal boosters.
-        is_foil_eligible:
-          type: boolean
-          description: Whether the card is eligible to be foil.
-        image_uri:
-          type:
-            - string
-            - "null"
-          format: uri
-          description: Direct image URI from the CSV, when available.
-        scryfall_uri:
-          type:
-            - string
-            - "null"
-          format: uri
-          description: Scryfall page URL. Always include this URL next to card names in user-facing answers.
-      required:
-        - id
-        - set
-        - name
-        - number
-        - rarity
-        - mana_cost
-        - cmc
-        - colors
-        - type_line
-        - is_basic_land
-        - is_land
-        - is_booster_eligible
-        - is_foil_eligible
-        - image_uri
-        - scryfall_uri
+      description: GPT_ACTION_API_KEY for read actions or GPT_IMPORT_API_KEY for collection imports.
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
 
-    SetCardsResponse:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+
+    CardRecord:
+      type: object
+      additionalProperties: true
+      properties:
+        id: { type: string }
+        scryfall_id: { type: string }
+        oracle_id: { type: string }
+        name: { type: string }
+        set: { type: string }
+        set_code: { type: string }
+        collector_number: { type: string }
+        mana_cost: { type: string }
+        cmc: { type: number }
+        type_line: { type: string }
+        oracle_text: { type: string }
+        scryfall_uri: { type: string, format: uri }
+
+    CollectionImportRequest:
       type: object
       additionalProperties: false
+      required: [source, csv, mode, confirmed]
       properties:
-        set:
-          type: string
-        meta:
-          type:
-            - object
-            - "null"
+        source: { type: string, const: manabox }
+        filename: { type: string }
+        csv: { type: string, description: Raw UTF-8 CSV content from the ManaBox export. }
+        mode: { type: string, const: synchronize }
+        confirmed: { type: boolean, const: true }
+
+    ImportWarning:
+      type: object
+      required: [row, code, message]
+      properties:
+        row: { type: integer }
+        code: { type: string }
+        message: { type: string }
+
+    CollectionImportCompleted:
+      type: object
+      required: [success, status, import_id, source_rows, normalized_entries, total_copies]
+      properties:
+        success: { type: boolean, const: true }
+        status: { type: string, const: completed }
+        import_id: { type: string, format: uuid }
+        source: { type: string }
+        filename: { type: [string, "null"] }
+        source_rows: { type: integer }
+        normalized_entries: { type: integer }
+        total_copies: { type: integer }
+        inserted_entries: { type: integer }
+        updated_entries: { type: integer }
+        unchanged_entries: { type: integer }
+        archived_entries: { type: integer }
+        warning_count: { type: integer }
+        warnings:
+          type: array
+          items: { $ref: "#/components/schemas/ImportWarning" }
+
+    CollectionImportUnchanged:
+      type: object
+      required: [success, status, previous_import_id, message]
+      properties:
+        success: { type: boolean, const: true }
+        status: { type: string, const: unchanged }
+        previous_import_id: { type: string, format: uuid }
+        message: { type: string }
+
+    CollectionImportRejected:
+      type: object
+      required: [success, status, errors, warnings]
+      properties:
+        success: { type: boolean, const: false }
+        status: { type: string, const: rejected }
+        import_id: { type: string, format: uuid }
+        errors: { type: array, items: { $ref: "#/components/schemas/ImportError" } }
+        warnings: { type: array, items: { $ref: "#/components/schemas/ImportWarning" } }
+
+    ImportError:
+      type: object
+      additionalProperties: true
+      properties:
+        row: { type: integer }
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+
+    OwnedCard:
+      type: object
+      properties:
+        scryfall_id: { type: [string, "null"], format: uuid }
+        name: { type: string }
+        set_code: { type: [string, "null"] }
+        collector_number: { type: [string, "null"] }
+        quantity: { type: integer, minimum: 1 }
+        finish: { type: string, enum: [nonfoil, foil, etched] }
+        condition: { type: [string, "null"] }
+        language: { type: string }
+        location: { type: string }
+
+    CollectionSearchResponse:
+      type: object
+      required: [query, total_entries, total_copies, items]
+      properties:
+        query:
+          type: object
           additionalProperties: true
           properties:
-            set:
-              type: string
-            cardCount:
-              type: integer
-            importedAt:
-              type: string
-            source:
-              type: string
-        filters:
+            name: { type: string }
+            setCode: { type: string }
+            collectorNumber: { type: string }
+            location: { type: string }
+            finish: { type: string }
+            condition: { type: string }
+            language: { type: string }
+            scryfallId: { type: string }
+        total_entries: { type: integer }
+        total_copies: { type: integer }
+        items: { type: array, items: { $ref: "#/components/schemas/OwnedCard" } }
+
+    CollectionStatsResponse:
+      type: object
+      required: [distinct_entries, unique_card_names, total_copies, foil_copies, locations]
+      properties:
+        distinct_entries: { type: integer }
+        unique_card_names: { type: integer }
+        total_copies: { type: integer }
+        foil_copies: { type: integer }
+        locations: { type: integer }
+        by_location:
           type: object
-          additionalProperties: false
+          properties: {}
+          additionalProperties: { type: integer }
+        by_finish:
+          type: object
+          properties: {}
+          additionalProperties: { type: integer }
+        by_condition:
+          type: object
+          properties: {}
+          additionalProperties: { type: integer }
+        by_language:
+          type: object
+          properties: {}
+          additionalProperties: { type: integer }
+        by_set:
+          type: object
+          properties: {}
+          additionalProperties: { type: integer }
+        last_import:
+          type: [object, "null"]
           properties:
-            rarity:
-              type:
-                - string
-                - "null"
-            color:
-              type:
-                - string
-                - "null"
-        count:
-          type: integer
-          description: Total cards matching the current filters.
-        returned:
-          type: integer
-          description: Number of cards returned on this page.
-        page:
-          type: integer
-        pageSize:
-          type: integer
-        totalPages:
-          type: integer
-        hasMore:
-          type: boolean
-        cards:
-          type: array
-          items:
-            $ref: "#/components/schemas/CompactCard"
-      required:
-        - set
-        - meta
-        - filters
-        - count
-        - returned
-        - page
-        - pageSize
-        - totalPages
-        - hasMore
-        - cards
+            id: { type: string, format: uuid }
+            source: { type: string }
+            completed_at: { type: string, format: date-time }
 
-    SimulatedPackCard:
-      allOf:
-        - $ref: "#/components/schemas/CompactCard"
-        - type: object
-          additionalProperties: false
+    DeckCoverageResponse:
+      type: object
+      required: [summary, owned, partially_owned, missing, unparsed_lines]
+      properties:
+        summary:
+          type: object
+          required: [requested_copies, owned_copies, missing_copies, coverage_percent]
           properties:
-            slot:
-              type: string
-              description: Booster slot that produced this card.
-            foil:
-              type: boolean
-              description: Whether this simulated card came from a foil slot.
-            promo:
-              type: boolean
-              description: Whether this simulated card is a promo.
-          required:
-            - slot
-            - foil
-            - promo
+            requested_copies: { type: integer }
+            owned_copies: { type: integer }
+            missing_copies: { type: integer }
+            coverage_percent: { type: number }
+        owned: { type: array, items: { $ref: "#/components/schemas/CoverageItem" } }
+        partially_owned: { type: array, items: { $ref: "#/components/schemas/CoverageItem" } }
+        missing: { type: array, items: { $ref: "#/components/schemas/CoverageItem" } }
+        unparsed_lines: { type: array, items: { $ref: "#/components/schemas/UnparsedLine" } }
 
-    SimulatedPackResponse:
+    CoverageItem:
       type: object
       additionalProperties: false
+      required: [name]
       properties:
-        set:
-          type: string
-        type:
-          type: string
-          enum:
-            - play_booster
-            - collector_booster
-            - jumpstart_booster
-            - prerelease_pool
-        count:
-          type: integer
-        cards:
-          type: array
-          items:
-            $ref: "#/components/schemas/SimulatedPackCard"
-      required:
-        - set
-        - type
-        - count
-        - cards
-  /api/collection/search:
-    get:
-      operationId: searchCollection
-      parameters:
-        - name: name
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Collection search result
+        name: { type: string }
+        required: { type: integer }
+        owned: { type: integer }
+        missing: { type: integer }
+        locations: { type: array, items: { type: string } }
 
-  /api/collection/check-deck:
-    post:
-      operationId: checkDeckAgainstCollection
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                decklist:
-                  type: string
-              required:
-                - decklist
-      responses:
-        "200":
-          description: Deck ownership comparison
-  /api/collection/import:
-    post:
-      operationId: importCollection
-      summary: Import collection CSV (ManaBox format)
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                confirmed:
-                  type: boolean
-                source:
-                  type: string
-                filename:
-                  type: string
-              required:
-                - file
-                - confirmed
-      responses:
-        "200":
-          description: Import processed successfully
-        "400":
-          description: Invalid request or validation errors
-        "401":
-          description: Unauthorized
-        "500":
-          description: Server error
-  /api/collection/stats:
-    get:
-      operationId: getCollectionStats
-      summary: Retrieve collection statistics
-      responses:
-        "200":
-          description: Collection statistics summary
-        "401":
-          description: Unauthorized
-        "500":
-          description: Server error
-  /api/collection/by-location:
-    get:
-      operationId: getCollectionByLocation
-      summary: Get cards by location
-      parameters:
-        - name: location
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Cards at specified location
-        "400":
-          description: Missing location parameter
-        "401":
-          description: Unauthorized
-        "500":
-          description: Server error
+    UnparsedLine:
+      type: object
+      additionalProperties: false
+      required: [line_number, text]
+      properties:
+        line_number: { type: integer }
+        text: { type: string }

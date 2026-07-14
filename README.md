@@ -1,453 +1,272 @@
-# MTG Scryfall Proxy for ChatGPT Actions
+# MTG GPT Middleware
 
-A lightweight Vercel proxy for the [Scryfall API](https://scryfall.com/docs/api), designed for ChatGPT Custom GPT Actions and MTG assistant workflows.
+A Vercel-hosted Magic: The Gathering middleware for Custom GPT Actions. It combines Scryfall canonical card data, Supabase physical collection ownership, ManaBox CSV synchronization, Redis-backed set data, and deterministic deck utilities.
 
-## Middleware architecture
+## Architecture
 
-The service is organized into three API domains:
+```text
+ManaBox CSV ──► /api/collection ──► Supabase
+Custom GPT ──► /api/cards      ──► Scryfall / Redis
+           └─► /api/decks      ──► card + collection services
+```
 
-- `/api/cards` provides Scryfall-backed search and canonical card details.
-- `/api/collection` imports and queries a Supabase-backed physical collection.
-- `/api/decks` parses, analyzes, compares, and diagnoses decklists.
+The primary domains are:
 
-ManaBox remains the scanning/export tool. A synchronized import is a complete snapshot: current entries are inserted or updated, missing entries are archived, and previous import history is retained.
+- `/api/cards`: canonical card search and details.
+- `/api/collection`: complete-snapshot imports, ownership search, statistics, and deck coverage.
+- `/api/decks`: structured deck analysis, comparison, and optimization diagnostics.
 
-## Environment and Supabase setup
+Existing `/api/set-cards` and `/api/simulate-pack` routes continue to use compact Redis set data and local product collation files.
 
-Required middleware variables are `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `GPT_ACTION_API_KEY`, and `GPT_IMPORT_API_KEY`. Existing Redis-backed endpoints additionally require their Upstash variables. Optional limits include `IMPORT_MAX_BYTES`, `IMPORT_MAX_ROWS`, and `SCRYFALL_USER_AGENT`.
+## API routes
 
-Apply the SQL files in `supabase/migrations` in numeric order before deploying. The service-role credential is server-only and must never be included in the GPT action schema.
+| Method | Route | Purpose | Credential |
+| --- | --- | --- | --- |
+| `GET` | `/api/cards/search` | Search canonical cards | Read |
+| `GET` | `/api/cards/details` | Resolve full card details | Read |
+| `POST` | `/api/collection/import` | Synchronize a complete ManaBox snapshot | Import |
+| `GET` | `/api/collection/search` | Search active owned cards | Read |
+| `GET` | `/api/collection/stats` | Collection totals and grouped statistics | Read |
+| `POST` | `/api/collection/check-deck` | Deterministic ownership coverage | Read |
+| `POST` | `/api/decks/analyze` | Structured deck facts | Read |
+| `POST` | `/api/decks/compare` | Compare two decklists | Read |
+| `POST` | `/api/decks/optimize` | Structured optimization diagnostics | Read |
+| `GET` | `/api/set-cards` | Compact imported set data | Public legacy tool |
+| `GET` | `/api/simulate-pack` | Simulate configured booster products | Public legacy tool |
 
-## Collection import
+The old collection routes `import-manabox` and `by-location` remain in the repository for migration compatibility but are not part of the current GPT Action schema. New clients should use the structured routes above.
 
-The JSON import contract accepts raw CSV content:
+## Authentication
+
+Protected routes accept either:
+
+```http
+Authorization: Bearer <key>
+```
+
+or:
+
+```http
+X-API-Key: <key>
+```
+
+Two permission levels are supported:
+
+| Variable | Permission |
+| --- | --- |
+| `GPT_ACTION_API_KEY` | Card, collection-read, and deck actions |
+| `GPT_IMPORT_API_KEY` | Collection synchronization; also accepted for reads |
+
+If `GPT_IMPORT_API_KEY` is omitted, the backend falls back to the read key. Separate credentials are recommended.
+
+## Environment variables
+
+### Required for the structured middleware
+
+```text
+SUPABASE_URL
+SUPABASE_SECRET_KEY
+GPT_ACTION_API_KEY
+GPT_IMPORT_API_KEY
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is accepted as an alias for `SUPABASE_SECRET_KEY`. These values belong only in server-side configuration and must never be placed in `schema.yaml`, GPT instructions, logs, or responses.
+
+### Required for Redis set tools
+
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+```
+
+### Optional
+
+| Variable | Default | Purpose |
+| --- | ---: | --- |
+| `IMPORT_MAX_BYTES` | `5242880` | Maximum raw CSV/request size |
+| `IMPORT_MAX_ROWS` | `25000` | Maximum CSV rows and normalized entries |
+| `IMPORT_RATE_LIMIT` | `5` | Import attempts per rolling hour |
+| `SCRYFALL_USER_AGENT` | `mtg-gpt/1.0` | Scryfall client identification |
+
+Legacy or unrelated endpoints may require additional variables such as `CRON_SECRET` or a Discord webhook if those routes are restored.
+
+## Supabase setup
+
+The collection schema contains:
+
+- `collection_imports`: file hashes, statuses, audit timestamps, change counts, and warnings.
+- `owned_cards`: physical ownership identity, printing metadata, quantity, finish, language, condition, location, import lineage, and archival state.
+- `sync_collection_snapshot(import_id, entries_json)`: atomic upsert, reactivation, archival, and audit-statistics RPC.
+
+For a fresh database, apply these files in numeric order:
+
+```text
+supabase/migrations/001_collection_schema.sql
+supabase/migrations/002_collection_indexes.sql
+supabase/migrations/003_sync_collection_snapshot.sql
+```
+
+The migrations are a fresh target schema, not an automatic upgrade for the earlier legacy tables. If legacy `collection_imports` or `owned_cards` tables already exist, back them up and explicitly migrate or drop them before applying the target schema. Row-level security is enabled and no anonymous write policy is created.
+
+## ManaBox import
+
+`POST /api/collection/import` accepts JSON containing raw CSV text:
 
 ```json
 {
   "source": "manabox",
-  "filename": "collection.csv",
-  "csv": "Name,Set code,Collector Number,Quantity\n...",
+  "filename": "Black Binder.csv",
+  "csv": "Name,Set code,Collector number,Quantity,Binder Name\n...",
   "mode": "synchronize",
   "confirmed": true
 }
 ```
 
+Example request:
+
 ```bash
-curl --fail-with-body -X POST \
+curl --fail-with-body \
+  -X POST \
   -H "Authorization: Bearer $GPT_IMPORT_API_KEY" \
   -H "Content-Type: application/json" \
   --data-binary @request.json \
   "https://your-domain.vercel.app/api/collection/import"
 ```
 
-For local diagnosis, run `npm run import:manabox -- ./collection.csv`. Both paths use the same import service.
+The import represents the complete active collection snapshot:
 
-The GPT must invoke an import only after an explicit import or synchronization request. Uploading, inspecting, or counting a CSV does not constitute permission.
+1. Authenticate with import permission.
+2. Require `confirmed: true`.
+3. Validate source, mode, request size, CSV shape, and row values.
+4. Normalize physical attributes and aggregate duplicate ownership entries.
+5. Calculate a SHA-256 hash and skip identical completed imports.
+6. Atomically insert, update, or reactivate current entries.
+7. Archive active entries missing from the new snapshot.
+8. Store counts and warnings in the import audit record.
 
-## Collection and deck actions
+A rejected or failed import does not replace the previous active snapshot. Routine imports never permanently delete collection records.
 
-Read actions authenticate with `Authorization: Bearer $GPT_ACTION_API_KEY` (or `X-API-Key`). Collection search supports name, printing, location, finish, condition, and language filters. The stats route returns totals and grouped counts. Deck checking deterministically partitions cards into owned, partially owned, and missing quantities.
+### GPT import behavior
 
-Decklists accept `1 Card`, `1x Card`, `1 Card (SET)`, and `1 Card (SET) 123`, with Commander, Mainboard, Sideboard, Maybeboard, and Companion sections. Deck analysis returns structured facts; comparison returns deterministic differences; optimization intentionally returns diagnostics rather than claiming a universally perfect deck.
+The GPT should call the import operation only when the user explicitly asks to import or synchronize an attached ManaBox CSV. Uploading a file, asking for a review, or asking for card totals does not grant import permission.
 
-## Testing and deployment
+After importing, report source rows, normalized entries, total copies, inserted, updated, unchanged, and archived entries, plus warnings. Never expose API keys, Supabase credentials, SQL errors, or stack traces.
 
-Run `npm test`. Deploy only after applying migrations and validating a sanitized import. Then update the Custom GPT with `schema.yaml` and test explicit import, analysis-only, duplicate, invalid, changed-quantity, removed-card, and reintroduced-card cases.
+### Local import
 
-If imports fail, verify migration order, server credentials, CSV headers, confirmation, request size, and row limits. A rejected or failed import does not replace the active snapshot.
+The local script calls the same service used by the HTTP endpoint:
 
-The proxy adds the HTTP headers Scryfall expects, which helps avoid `403 Forbidden` issues when calling Scryfall directly from a GPT Action.
+```bash
+node --env-file=.env.local \
+  scripts/import-manabox-local.js \
+  "data/collection/Black Binder - import ready.csv"
+```
 
----
+or, when credentials are available through the normal process environment or `.env`:
 
-## Features
+```bash
+npm run import:manabox -- ./collection.csv
+```
 
-- Look up a Magic card by name.
-- Fetch a card image by name.
-- Fetch a compact card list for an entire set for GPT reasoning.
-- Track newly revealed cards from a set and send Discord reveal digests.
-- Deploy as serverless API routes on Vercel.
-- Optional Redis-backed reveal tracking through Upstash.
+## Collection search and statistics
 
----
+Search supports partial name, Scryfall ID, set, collector number, location, finish, condition, and language filters. Only active rows (`archived_at is null`) are returned.
 
-## Project structure
+```bash
+curl \
+  -H "Authorization: Bearer $GPT_ACTION_API_KEY" \
+  "https://your-domain.vercel.app/api/collection/search?location=Black%20Binder&finish=foil"
+```
+
+`GET /api/collection/stats` returns active entry count, unique names, total and foil copies, grouped statistics, and the latest completed import.
+
+## Decklists
+
+The shared parser accepts:
 
 ```text
-mtg-gpt/
-├── api/
-│   ├── card.js
-│   ├── card-image.js
-│   ├── check-reveals.js
-│   └── set-cards.js
-├── package.json
-├── vercel.json
-└── README.md
+1 Card Name
+1x Card Name
+1 Card Name (SET)
+1 Card Name (SET) 123
 ```
 
-> `set-cards.js` is the recommended new endpoint for whole-set reasoning in GPT Actions. Add it before using the `/api/set-cards` route.
+Recognized sections are Commander, Mainboard, Sideboard, Maybeboard, and Companion. Parsed entries preserve quantity, submitted name, printing identifiers, section, and source line number.
 
----
+- `check-deck` calculates owned, partially owned, and missing quantities deterministically.
+- `analyze` returns deck size, color identity, curve, land count, type distribution, unresolved cards, and optional collection coverage.
+- `compare` returns shared and exclusive cards plus structured curve/type differences.
+- `optimize` returns diagnostics and candidate-change structures; strategic natural-language reasoning remains the GPT's responsibility.
 
-## API routes
+## Card data and set tools
 
-### `GET /api/card`
+Scryfall remains the canonical authority for card names, oracle data, types, legalities, images, and printing identifiers. Redis stores compact imported set records used by `/api/set-cards`, `/api/card`, `/api/card-detail`, and pack simulation.
 
-Looks up a card by fuzzy name using Scryfall and returns a simplified JSON response.
+Import a compact Scryfall set CSV with:
 
-#### Query parameters
+```bash
+npm run import:set -- ./path/to/scryfall-set.csv
+```
 
-| Parameter | Required | Example | Description |
-| --- | --- | --- | --- |
-| `name` | Yes | `Lightning Bolt` | Card name to search with Scryfall fuzzy matching. |
+Pack collation files live under `data/products/<set>/`.
 
-#### Example request
+## Custom GPT Actions
+
+Use `schema.yaml` as the action definition and replace its server URL when deploying under a different domain. Configure bearer authentication with the appropriate action key.
+
+Recommended action operation IDs:
 
 ```text
-/api/card?name=Lightning%20Bolt
+searchCards
+getCardDetails
+importCollection
+searchCollection
+getCollectionStats
+checkDeckAgainstCollection
+analyzeDeck
+compareDecks
+optimizeDeck
 ```
 
-#### Example response shape
+The schema also exposes the existing `getSetCards` and `simulatePack` operations.
 
-```json
-{
-  "name": "Lightning Bolt",
-  "mana_cost": "{R}",
-  "type_line": "Instant",
-  "oracle_text": "Lightning Bolt deals 3 damage to any target.",
-  "power": null,
-  "toughness": null,
-  "loyalty": null,
-  "keywords": [],
-  "legalities": {},
-  "image": "https://...",
-  "art_crop": "https://...",
-  "rulings": "https://...",
-  "scryfall": "https://..."
-}
-```
+## Development and verification
 
----
-
-### `GET /api/card-image`
-
-Looks up a card by fuzzy name and returns the normal card image as binary image data.
-
-#### Query parameters
-
-| Parameter | Required | Example | Description |
-| --- | --- | --- | --- |
-| `name` | Yes | `Lightning Bolt` | Card name to search with Scryfall fuzzy matching. |
-
-#### Example request
-
-```text
-/api/card-image?name=Lightning%20Bolt
-```
-
-#### Response
-
-Returns image bytes with a `Content-Type` from Scryfall, usually `image/jpeg`.
-
----
-
-### `GET /api/set-cards`
-
-Returns a compact, GPT-friendly list of cards from an entire Scryfall set.
-
-This route is intended for reasoning-heavy tasks such as:
-
-- prerelease deckbuilding;
-- comparing color strength;
-- evaluating commons and uncommons;
-- finding synergies and archetypes;
-- identifying bombs, removal, fixing, and curve support.
-
-The response intentionally avoids large fields such as images, prices, purchase links, legalities, artist data, related URIs, and full Scryfall metadata.
-
-#### Query parameters
-
-| Parameter | Required | Default | Example | Description |
-| --- | --- | --- | --- | --- |
-| `set` | Yes | — | `msh` | Scryfall set code. |
-| `code` | No | — | `msh` | Alias for `set`. |
-| `includeExtras` | No | `false` | `true` | Include extras such as tokens or special objects. |
-| `includeVariations` | No | `false` | `true` | Include variant printings. |
-
-#### Example request
-
-```text
-/api/set-cards?set=msh
-```
-
-#### Example request including extras and variations
-
-```text
-/api/set-cards?set=msh&includeExtras=true&includeVariations=true
-```
-
-#### Example response shape
-
-```json
-{
-  "set": "msh",
-  "name": "Marvel Super Heroes",
-  "count": 302,
-  "cards": [
-    {
-      "name": "Example Hero",
-      "cost": "{2}{W}",
-      "mv": 3,
-      "colors": ["W"],
-      "rarity": "uncommon",
-      "type": "Creature — Human Hero",
-      "text": "Flying. When this creature enters, tap target creature.",
-      "pt": "2/3",
-      "keywords": ["Flying"],
-      "number": "12"
-    }
-  ]
-}
-```
-
-#### Compact card fields
-
-| Field | Description |
-| --- | --- |
-| `name` | Card name. |
-| `cost` | Mana cost. |
-| `mv` | Mana value. |
-| `colors` | Card colors. |
-| `color_identity` | Included only when it adds information beyond `colors`. |
-| `rarity` | Card rarity. |
-| `type` | Type line. |
-| `text` | Oracle text, including face text for double-faced or modal cards. |
-| `pt` | Power/toughness when present. |
-| `loyalty` | Planeswalker loyalty when present. |
-| `defense` | Battle defense when present. |
-| `keywords` | Scryfall keyword array. |
-| `number` | Collector number. |
-
----
-
-### `GET /api/check-reveals`
-
-Protected endpoint used by Vercel Cron to check a Scryfall set for newly revealed cards and send a Discord digest.
-
-This is not intended as a public GPT Action route. It requires an authorization header and environment variables.
-
-#### Query parameters
-
-| Parameter | Required | Default | Example | Description |
-| --- | --- | --- | --- | --- |
-| `set` | No | `msh` | `msh` | Scryfall set code to check. |
-
-#### Required header
-
-```text
-Authorization: Bearer <CRON_SECRET>
-```
-
-#### Example request
-
-```text
-/api/check-reveals?set=msh
-```
-
-#### Example response shape
-
-```json
-{
-  "success": true,
-  "set": "msh",
-  "total_cards": 302,
-  "new_cards": [
-    {
-      "name": "Example Hero",
-      "collector_number": "12",
-      "scryfall": "https://...",
-      "image": "https://..."
-    }
-  ],
-  "first_run": false
-}
-```
-
----
-
-## Environment variables
-
-The basic card lookup and set-card endpoints do not require environment variables.
-
-The reveal-checking endpoint requires:
-
-| Variable | Required for | Description |
-| --- | --- | --- |
-| `CRON_SECRET` | `/api/check-reveals` | Secret token used in the `Authorization` header. |
-| `DISCORD_WEBHOOK_URL` | `/api/check-reveals` | Discord webhook where reveal digests are posted. |
-| `UPSTASH_REDIS_REST_URL` | `/api/check-reveals` | Upstash Redis REST URL. |
-| `UPSTASH_REDIS_REST_TOKEN` | `/api/check-reveals` | Upstash Redis REST token. |
-
----
-
-## Vercel Cron
-
-The current cron configuration checks the Marvel set once per day:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/check-reveals?set=msh",
-      "schedule": "0 12 * * *"
-    }
-  ]
-}
-```
-
-The schedule above runs daily at 12:00 UTC.
-
----
-
-## Local development
-
-Install dependencies:
+Install dependencies and run tests:
 
 ```bash
 npm install
+npm test
 ```
 
-Run locally with Vercel:
+Run Vercel functions locally:
 
 ```bash
 vercel dev
 ```
 
-Example local requests:
+Before deployment:
 
-```text
-http://localhost:3000/api/card?name=Lightning%20Bolt
-http://localhost:3000/api/card-image?name=Lightning%20Bolt
-http://localhost:3000/api/set-cards?set=msh
-```
+1. Apply and verify the Supabase schema.
+2. Test a sanitized first import.
+3. Test identical, invalid, changed-quantity, removed-card, and reintroduced-card imports.
+4. Test collection search, stats, and deterministic deck coverage.
+5. Validate `schema.yaml` and update the Custom GPT Action.
+6. Store all secrets in Vercel server-side environment variables.
 
----
+## Troubleshooting
 
-## Deploy to Vercel
+- Missing `created_at`, `ownership_key`, or `finish` means the legacy Supabase schema is still deployed.
+- `fetch failed` during local import usually indicates network restrictions or an invalid Supabase URL.
+- `INVALID_COLLECTION_EXPORT` indicates an unsupported source/mode, malformed CSV, invalid row, or exceeded limit.
+- Location warnings mean the ManaBox export lacks a Binder/List column; add `Binder Name` before importing if location matters.
+- A duplicate file hash returns `status: unchanged` and does not modify collection rows.
+- Archived entries are intentionally excluded from normal search and statistics.
 
-Install the Vercel CLI if needed:
+## Security notes
 
-```bash
-npm install -g vercel
-```
-
-Log in:
-
-```bash
-vercel login
-```
-
-Deploy a preview:
-
-```bash
-vercel
-```
-
-Deploy to production:
-
-```bash
-vercel --prod
-```
-
----
-
-## Using with ChatGPT Custom GPT Actions
-
-In your Custom GPT:
-
-1. Open **Configure**.
-2. Go to **Actions**.
-3. Create or edit an action.
-4. Paste your OpenAPI schema.
-5. Set the server URL to your Vercel domain.
-
-Example:
-
-```yaml
-servers:
-  - url: https://your-project.vercel.app
-```
-
-Recommended GPT Action routes:
-
-```text
-GET /api/card
-GET /api/card-image
-GET /api/set-cards
-```
-
-Avoid exposing `/api/check-reveals` as a GPT Action because it is a protected cron/automation endpoint.
-
----
-
-## Suggested OpenAPI path for `/api/set-cards`
-
-```yaml
-/api/set-cards:
-  get:
-    operationId: getScryfallSetCards
-    summary: Get a compact card list for an entire Scryfall set
-    description: Returns a compact, GPT-friendly list of cards from a Scryfall set for deckbuilding and set analysis.
-    parameters:
-      - name: set
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Scryfall set code, for example msh.
-      - name: includeExtras
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-        description: Whether to include extras such as tokens or special objects.
-      - name: includeVariations
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
-        description: Whether to include variant printings.
-    responses:
-      "200":
-        description: Compact set card list.
-      "400":
-        description: Missing or invalid set code.
-      "500":
-        description: Internal proxy error.
-```
-
----
-
-## Notes
-
-Scryfall expects API clients to send:
-
-- HTTPS requests;
-- a descriptive `User-Agent`;
-- an appropriate `Accept` header.
-
-This proxy handles those headers automatically.
-
-For whole-set GPT reasoning, prefer `/api/set-cards` over raw Scryfall responses because the compact response saves context and focuses on card evaluation fields.
-
----
-
-## Useful links
-
-- [Scryfall API Docs](https://scryfall.com/docs/api)
-- [Scryfall Sets API](https://scryfall.com/docs/api/sets)
-- [Scryfall Card Search API](https://scryfall.com/docs/api/cards/search)
-- [OpenAI Actions Docs](https://platform.openai.com/docs/actions)
-- [Vercel Functions Docs](https://vercel.com/docs/functions)
+- Never expose the Supabase service-role credential to browsers or GPT Actions.
+- Never commit `.env` or `.env.local`.
+- Do not create anonymous write policies for collection tables.
+- Treat collection synchronization as a privileged operation.
+- Preserve import history and archive missing entries rather than deleting them.
