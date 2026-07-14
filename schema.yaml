@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: MTG GPT Actions
   version: 3.2.0
-  description: Stable public Actions API for card lookup, collection search, deck analysis, and pack simulation through consolidated serverless routers.
+  description: Card, collection, deck, set, and pack actions.
 
 servers:
   - url: https://mtg-gpt-five.vercel.app
@@ -14,8 +14,7 @@ paths:
   /api/cards/search:
     get:
       operationId: searchCards
-      summary: Search Magic cards
-      description: Search canonical card data by name, set, collector number, identifier, color, or type.
+      summary: Search cards
       parameters:
         - name: name
           in: query
@@ -27,22 +26,10 @@ paths:
             type: string
         - name: number
           in: query
-          description: Collector number. Prefer this field over the collector_number alias.
-          schema:
-            type: string
-        - name: collector_number
-          in: query
-          description: Backward-compatible alias for number.
           schema:
             type: string
         - name: id
           in: query
-          description: Scryfall card identifier. Prefer this field over the scryfall_id alias.
-          schema:
-            type: string
-        - name: scryfall_id
-          in: query
-          description: Backward-compatible alias for id.
           schema:
             type: string
         - name: color
@@ -56,27 +43,14 @@ paths:
       responses:
         "200":
           description: Matching cards.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Card search failed.
 
   /api/cards/details:
     get:
       operationId: getCardDetails
       summary: Get card details
-      description: Resolve one card by Scryfall identifier, exact name, or set and collector number.
       parameters:
         - name: id
           in: query
-          description: Scryfall card identifier. Prefer this field over the scryfall_id alias.
-          schema:
-            type: string
-        - name: scryfall_id
-          in: query
-          description: Backward-compatible alias for id.
           schema:
             type: string
         - name: name
@@ -89,42 +63,19 @@ paths:
             type: string
         - name: number
           in: query
-          description: Collector number used with set. Prefer this field over the collector_number alias.
-          schema:
-            type: string
-        - name: collector_number
-          in: query
-          description: Backward-compatible alias for number.
           schema:
             type: string
       responses:
         "200":
-          description: Canonical card details.
-        "400":
-          description: Missing or ambiguous identifier.
-        "401":
-          description: Authentication failed.
-        "404":
-          description: Card not found.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Card detail lookup failed.
+          description: Card details.
 
   /api/collection/search:
     get:
       operationId: searchCollection
       summary: Search owned cards
-      description: Search active physical collection entries and return matching quantities.
       parameters:
         - name: name
           in: query
-          description: Partial card name. Prefer this field over the query alias.
-          schema:
-            type: string
-        - name: query
-          in: query
-          description: Backward-compatible alias for name.
           schema:
             type: string
         - name: scryfall_id
@@ -147,10 +98,6 @@ paths:
           in: query
           schema:
             type: string
-            enum:
-              - nonfoil
-              - foil
-              - etched
         - name: condition
           in: query
           schema:
@@ -161,34 +108,20 @@ paths:
             type: string
       responses:
         "200":
-          description: Matching active collection entries.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Collection search failed.
+          description: Owned cards.
 
   /api/collection/stats:
     get:
       operationId: getCollectionStats
       summary: Get collection statistics
-      description: Return active collection totals, grouped counts, and the latest import summary.
       responses:
         "200":
           description: Collection statistics.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Collection statistics lookup failed.
 
   /api/collection/check-deck:
     post:
       operationId: checkDeckAgainstCollection
       summary: Check deck ownership
-      description: Compare required deck quantities with the active physical collection.
       x-openai-isConsequential: false
       requestBody:
         required: true
@@ -201,29 +134,18 @@ paths:
                   type: string
                 match_printing:
                   type: boolean
-                  default: false
                 include_locations:
                   type: boolean
-                  default: true
               required:
                 - decklist
       responses:
         "200":
-          description: Owned, partially owned, and missing quantities.
-        "400":
-          description: Invalid decklist.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
-        "413":
-          description: Request body is too large.
+          description: Deck ownership.
 
   /api/decks/analyze:
     post:
       operationId: analyzeDeck
       summary: Analyze a deck
-      description: Return structured deck facts and optional collection coverage.
       x-openai-isConsequential: false
       requestBody:
         required: true
@@ -238,24 +160,16 @@ paths:
                   type: string
                 include_collection:
                   type: boolean
-                  default: false
               required:
                 - decklist
       responses:
         "200":
-          description: Structured deck analysis.
-        "400":
-          description: Invalid decklist.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
+          description: Deck analysis.
 
   /api/decks/compare:
     post:
       operationId: compareDecks
       summary: Compare two decks
-      description: Return shared cards, differences, and optional collection coverage.
       x-openai-isConsequential: false
       requestBody:
         required: true
@@ -270,25 +184,17 @@ paths:
                   type: string
                 include_collection:
                   type: boolean
-                  default: false
               required:
                 - deck_a
                 - deck_b
       responses:
         "200":
-          description: Structured deck comparison.
-        "400":
-          description: Invalid decklist.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
+          description: Deck comparison.
 
   /api/decks/optimize:
     post:
       operationId: optimizeDeck
       summary: Diagnose deck improvements
-      description: Return structured diagnostics and candidate change lists.
       x-openai-isConsequential: false
       requestBody:
         required: true
@@ -308,26 +214,18 @@ paths:
                       type: boolean
                     maximum_additions:
                       type: integer
-                      minimum: 0
                     preserve_theme:
                       type: boolean
               required:
                 - decklist
       responses:
         "200":
-          description: Deck diagnostics and candidate changes.
-        "400":
-          description: Invalid decklist.
-        "401":
-          description: Authentication failed.
-        "405":
-          description: Method not allowed.
+          description: Deck diagnostics.
 
   /api/set-cards:
     get:
       operationId: getSetCards
       summary: Get cards from a set
-      description: Return a compact paginated card list from an imported set database.
       security: []
       parameters:
         - name: set
@@ -339,50 +237,26 @@ paths:
           in: query
           schema:
             type: integer
-            minimum: 1
-            default: 1
         - name: pageSize
           in: query
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
-            default: 75
         - name: rarity
           in: query
           schema:
             type: string
-            enum:
-              - common
-              - uncommon
-              - rare
-              - mythic
         - name: color
           in: query
           schema:
             type: string
-            enum:
-              - W
-              - U
-              - B
-              - R
-              - G
-              - C
       responses:
         "200":
-          description: Compact paginated card list.
-        "400":
-          description: Invalid set or filter.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Set-card lookup failed.
+          description: Set cards.
 
   /api/simulate-pack:
     get:
       operationId: simulatePack
       summary: Simulate a booster product
-      description: Simulate a configured booster pack or prerelease pool.
       security: []
       parameters:
         - name: set
@@ -395,20 +269,9 @@ paths:
           required: true
           schema:
             type: string
-            enum:
-              - play_booster
-              - collector_booster
-              - jumpstart_booster
-              - prerelease_pool
       responses:
         "200":
-          description: Simulated cards and product metadata.
-        "400":
-          description: Invalid set or product type.
-        "405":
-          description: Method not allowed.
-        "500":
-          description: Product simulation failed.
+          description: Simulated product.
 
 components:
   schemas: {}
