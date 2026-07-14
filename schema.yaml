@@ -68,37 +68,6 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { description: Card not found }
 
-  /api/collection/import:
-    post:
-      operationId: importCollection
-      summary: Synchronize a physical collection from ManaBox
-      description: >
-        Imports a complete physical collection snapshot. Use only when the
-        user explicitly asks to import or synchronize an attached ManaBox CSV.
-        Missing active entries are archived, not deleted. This operation
-        requires the import credential rather than the read-only credential.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CollectionImportRequest"
-      responses:
-        "200":
-          description: Import completed, was rejected by validation, or was already current
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/CollectionImportCompleted"
-                  - $ref: "#/components/schemas/CollectionImportUnchanged"
-                  - $ref: "#/components/schemas/CollectionImportRejected"
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "413": { description: Request exceeds the configured size limit }
-
   /api/collection/search:
     get:
       operationId: searchCollection
@@ -140,6 +109,7 @@ paths:
     post:
       operationId: checkDeckAgainstCollection
       summary: Check deterministic deck ownership coverage
+      x-openai-isConsequential: false
       security:
         - bearerAuth: []
       requestBody:
@@ -167,6 +137,7 @@ paths:
     post:
       operationId: analyzeDeck
       summary: Analyze a decklist into structured facts
+      x-openai-isConsequential: false
       security:
         - bearerAuth: []
       requestBody:
@@ -190,6 +161,7 @@ paths:
     post:
       operationId: compareDecks
       summary: Compare two decklists
+      x-openai-isConsequential: false
       security:
         - bearerAuth: []
       requestBody:
@@ -213,6 +185,7 @@ paths:
     post:
       operationId: optimizeDeck
       summary: Produce structured optimization diagnostics
+      x-openai-isConsequential: false
       description: Returns diagnostics and candidate-change structures; it does not claim to construct a universally optimal deck.
       security:
         - bearerAuth: []
@@ -276,7 +249,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: GPT_ACTION_API_KEY for read actions or GPT_IMPORT_API_KEY for collection imports.
+      description: GPT_ACTION_API_KEY for protected card, collection-read, and deck actions.
   responses:
     BadRequest:
       description: Invalid request
@@ -323,74 +296,6 @@ components:
         type_line: { type: string }
         oracle_text: { type: string }
         scryfall_uri: { type: string, format: uri }
-
-    CollectionImportRequest:
-      type: object
-      additionalProperties: false
-      required: [source, csv, mode, confirmed]
-      properties:
-        source: { type: string, const: manabox }
-        filename: { type: string }
-        csv: { type: string, description: Raw UTF-8 CSV content from the ManaBox export. }
-        mode: { type: string, const: synchronize }
-        confirmed: { type: boolean, const: true }
-
-    ImportWarning:
-      type: object
-      required: [row, code, message]
-      properties:
-        row: { type: integer }
-        code: { type: string }
-        message: { type: string }
-
-    CollectionImportCompleted:
-      type: object
-      required: [success, status, import_id, source_rows, normalized_entries, total_copies]
-      properties:
-        success: { type: boolean, const: true }
-        status: { type: string, const: completed }
-        import_id: { type: string, format: uuid }
-        source: { type: string }
-        filename: { type: [string, "null"] }
-        source_rows: { type: integer }
-        normalized_entries: { type: integer }
-        total_copies: { type: integer }
-        inserted_entries: { type: integer }
-        updated_entries: { type: integer }
-        unchanged_entries: { type: integer }
-        archived_entries: { type: integer }
-        warning_count: { type: integer }
-        warnings:
-          type: array
-          items: { $ref: "#/components/schemas/ImportWarning" }
-
-    CollectionImportUnchanged:
-      type: object
-      required: [success, status, previous_import_id, message]
-      properties:
-        success: { type: boolean, const: true }
-        status: { type: string, const: unchanged }
-        previous_import_id: { type: string, format: uuid }
-        message: { type: string }
-
-    CollectionImportRejected:
-      type: object
-      required: [success, status, errors, warnings]
-      properties:
-        success: { type: boolean, const: false }
-        status: { type: string, const: rejected }
-        import_id: { type: string, format: uuid }
-        errors: { type: array, items: { $ref: "#/components/schemas/ImportError" } }
-        warnings: { type: array, items: { $ref: "#/components/schemas/ImportWarning" } }
-
-    ImportError:
-      type: object
-      additionalProperties: true
-      properties:
-        row: { type: integer }
-        field: { type: string }
-        code: { type: string }
-        message: { type: string }
 
     OwnedCard:
       type: object

@@ -24,7 +24,6 @@ Existing `/api/set-cards` and `/api/simulate-pack` routes continue to use compac
 | --- | --- | --- | --- |
 | `GET` | `/api/cards/search` | Search canonical cards | Read |
 | `GET` | `/api/cards/details` | Resolve full card details | Read |
-| `POST` | `/api/collection/import` | Synchronize a complete ManaBox snapshot | Import |
 | `GET` | `/api/collection/search` | Search active owned cards | Read |
 | `GET` | `/api/collection/stats` | Collection totals and grouped statistics | Read |
 | `POST` | `/api/collection/check-deck` | Deterministic ownership coverage | Read |
@@ -50,14 +49,14 @@ or:
 X-API-Key: <key>
 ```
 
-Two permission levels are supported:
+Two backend permission levels are supported:
 
 | Variable | Permission |
 | --- | --- |
 | `GPT_ACTION_API_KEY` | Card, collection-read, and deck actions |
-| `GPT_IMPORT_API_KEY` | Collection synchronization; also accepted for reads |
+| `GPT_IMPORT_API_KEY` | Administrative collection synchronization; not exposed in `schema.yaml` |
 
-If `GPT_IMPORT_API_KEY` is omitted, the backend falls back to the read key. Separate credentials are recommended.
+If `GPT_IMPORT_API_KEY` is omitted, the backend falls back to the read key. Separate credentials are recommended. Configure the Custom GPT Action with `GPT_ACTION_API_KEY`; imports remain an administrative backend/local-script capability.
 
 ## Environment variables
 
@@ -146,11 +145,9 @@ The import represents the complete active collection snapshot:
 
 A rejected or failed import does not replace the previous active snapshot. Routine imports never permanently delete collection records.
 
-### GPT import behavior
+### Custom GPT boundary
 
-The GPT should call the import operation only when the user explicitly asks to import or synchronize an attached ManaBox CSV. Uploading a file, asking for a review, or asking for card totals does not grant import permission.
-
-After importing, report source rows, normalized entries, total copies, inserted, updated, unchanged, and archived entries, plus warnings. Never expose API keys, Supabase credentials, SQL errors, or stack traces.
+Collection import is intentionally omitted from `schema.yaml`. The Custom GPT may analyze an uploaded CSV, but it cannot modify the stored collection. Run imports through the authenticated administrative endpoint or local script instead.
 
 ### Local import
 
@@ -219,7 +216,6 @@ Recommended action operation IDs:
 ```text
 searchCards
 getCardDetails
-importCollection
 searchCollection
 getCollectionStats
 checkDeckAgainstCollection
@@ -228,7 +224,7 @@ compareDecks
 optimizeDeck
 ```
 
-The schema also exposes the existing `getSetCards` and `simulatePack` operations.
+The schema also exposes the existing `getSetCards` and `simulatePack` operations. It intentionally does not expose `importCollection`.
 
 ## Development and verification
 
