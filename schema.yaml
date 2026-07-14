@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: MTG GPT Actions
-  version: 3.1.0
-  description: Card lookup, collection search, deck analysis, and pack simulation.
+  version: 3.2.0
+  description: Stable public Actions API for card lookup, collection search, deck analysis, and pack simulation through consolidated serverless routers.
 
 servers:
   - url: https://mtg-gpt-five.vercel.app
@@ -27,10 +27,22 @@ paths:
             type: string
         - name: number
           in: query
+          description: Collector number. Prefer this field over the collector_number alias.
+          schema:
+            type: string
+        - name: collector_number
+          in: query
+          description: Backward-compatible alias for number.
           schema:
             type: string
         - name: id
           in: query
+          description: Scryfall card identifier. Prefer this field over the scryfall_id alias.
+          schema:
+            type: string
+        - name: scryfall_id
+          in: query
+          description: Backward-compatible alias for id.
           schema:
             type: string
         - name: color
@@ -46,6 +58,10 @@ paths:
           description: Matching cards.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Card search failed.
 
   /api/cards/details:
     get:
@@ -55,6 +71,12 @@ paths:
       parameters:
         - name: id
           in: query
+          description: Scryfall card identifier. Prefer this field over the scryfall_id alias.
+          schema:
+            type: string
+        - name: scryfall_id
+          in: query
+          description: Backward-compatible alias for id.
           schema:
             type: string
         - name: name
@@ -67,6 +89,12 @@ paths:
             type: string
         - name: number
           in: query
+          description: Collector number used with set. Prefer this field over the collector_number alias.
+          schema:
+            type: string
+        - name: collector_number
+          in: query
+          description: Backward-compatible alias for number.
           schema:
             type: string
       responses:
@@ -78,6 +106,10 @@ paths:
           description: Authentication failed.
         "404":
           description: Card not found.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Card detail lookup failed.
 
   /api/collection/search:
     get:
@@ -87,6 +119,12 @@ paths:
       parameters:
         - name: name
           in: query
+          description: Partial card name. Prefer this field over the query alias.
+          schema:
+            type: string
+        - name: query
+          in: query
+          description: Backward-compatible alias for name.
           schema:
             type: string
         - name: scryfall_id
@@ -126,6 +164,10 @@ paths:
           description: Matching active collection entries.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Collection search failed.
 
   /api/collection/stats:
     get:
@@ -137,6 +179,10 @@ paths:
           description: Collection statistics.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Collection statistics lookup failed.
 
   /api/collection/check-deck:
     post:
@@ -168,6 +214,10 @@ paths:
           description: Invalid decklist.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
+        "413":
+          description: Request body is too large.
 
   /api/decks/analyze:
     post:
@@ -198,6 +248,8 @@ paths:
           description: Invalid decklist.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
 
   /api/decks/compare:
     post:
@@ -229,6 +281,8 @@ paths:
           description: Invalid decklist.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
 
   /api/decks/optimize:
     post:
@@ -266,6 +320,8 @@ paths:
           description: Invalid decklist.
         "401":
           description: Authentication failed.
+        "405":
+          description: Method not allowed.
 
   /api/set-cards:
     get:
@@ -317,6 +373,10 @@ paths:
           description: Compact paginated card list.
         "400":
           description: Invalid set or filter.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Set-card lookup failed.
 
   /api/simulate-pack:
     get:
@@ -345,6 +405,10 @@ paths:
           description: Simulated cards and product metadata.
         "400":
           description: Invalid set or product type.
+        "405":
+          description: Method not allowed.
+        "500":
+          description: Product simulation failed.
 
 components:
   schemas: {}
