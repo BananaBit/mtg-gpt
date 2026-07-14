@@ -156,6 +156,8 @@ The shared parser accepts:
 
 Recognized sections are Commander, Mainboard, Sideboard, Maybeboard, and Companion. Parsed entries preserve quantity, submitted name, printing identifiers, section, and source line number.
 
+Canonical card resolution accepts name-only entries, deduplicates repeated identifiers, and batches Scryfall lookups so Commander-size decklists do not perform one remote request per card.
+
 - `check-deck` calculates owned, partially owned, and missing quantities deterministically.
 - `analyze` returns deck size, color identity, curve, land count, type distribution, unresolved cards, and optional collection coverage.
 - `compare` returns shared and exclusive cards plus structured curve/type differences.

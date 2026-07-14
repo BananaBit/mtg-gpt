@@ -202,7 +202,7 @@ No `oneOf`, union types, or conditional request schemas should be introduced int
 
 ## 9. Canonical Card Resolution Evolution
 
-The current `resolveCards` implementation performs Scryfall requests sequentially. That approach is incompatible with reliable Commander-scale analysis.
+The shared `resolveCards` implementation now deduplicates identifiers and uses bounded Scryfall collection batches, including exact-name resolution for name-only decklists. Further resolver evolution must preserve that behavior while completing the requirements below.
 
 Implement a reusable canonical resolver with:
 

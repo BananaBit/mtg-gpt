@@ -1,0 +1,126 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MTG GPT Actions - cards",
+    "description": "Card, collection, deck, set, and pack actions.",
+    "version": "v3.2.0"
+  },
+  "servers": [
+    {
+      "url": "https://mtg-gpt-five.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/cards/search": {
+      "get": {
+        "operationId": "searchCards",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card color filter.",
+            "required": false
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card type or product type.",
+            "required": false
+          }
+        ],
+        "description": "Search canonical card data by name, set, collector number, identifier, color, or type.",
+        "deprecated": false
+      }
+    },
+    "/api/cards/details": {
+      "get": {
+        "operationId": "getCardDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          }
+        ],
+        "description": "Get card details by identifier, exact name, or set and collector number.",
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MTG GPT Actions - products",
+    "description": "Card, collection, deck, set, and pack actions.",
+    "version": "v3.2.0"
+  },
+  "servers": [
+    {
+      "url": "https://mtg-gpt-five.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/set-cards": {
+      "get": {
+        "operationId": "getSetCards",
+        "parameters": [
+          {
+            "name": "set",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number.",
+            "required": false
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of cards per page.",
+            "required": false
+          },
+          {
+            "name": "rarity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card rarity filter.",
+            "required": false
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card color filter.",
+            "required": false
+          }
+        ],
+        "description": "Get a paginated card list for an imported set.",
+        "deprecated": false
+      }
+    },
+    "/api/simulate-pack": {
+      "get": {
+        "operationId": "simulatePack",
+        "parameters": [
+          {
+            "name": "set",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card type or product type."
+          }
+        ],
+        "description": "Simulate a configured booster pack or prerelease product.",
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

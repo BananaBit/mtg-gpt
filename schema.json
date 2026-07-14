@@ -1,0 +1,435 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MTG GPT Actions",
+    "version": "v3.2.0",
+    "description": "Card, collection, deck, set, and pack actions."
+  },
+  "servers": [
+    {
+      "url": "https://mtg-gpt-five.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/cards/search": {
+      "get": {
+        "operationId": "searchCards",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card color filter.",
+            "required": false
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card type or product type.",
+            "required": false
+          }
+        ],
+        "description": "Search canonical card data by name, set, collector number, identifier, color, or type.",
+        "deprecated": false
+      }
+    },
+    "/api/cards/details": {
+      "get": {
+        "operationId": "getCardDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          }
+        ],
+        "description": "Get card details by identifier, exact name, or set and collector number.",
+        "deprecated": false
+      }
+    },
+    "/api/collection/search": {
+      "get": {
+        "operationId": "searchCollection",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "scryfall_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "collector_number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collection location.",
+            "required": false
+          },
+          {
+            "name": "finish",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card finish.",
+            "required": false
+          },
+          {
+            "name": "condition",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card condition.",
+            "required": false
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card language.",
+            "required": false
+          }
+        ],
+        "description": "Search active cards in the physical collection.",
+        "deprecated": false
+      }
+    },
+    "/api/collection/stats": {
+      "get": {
+        "operationId": "getCollectionStats",
+        "description": "Get totals and grouped statistics for the active collection.",
+        "deprecated": false
+      }
+    },
+    "/api/collection/check-deck": {
+      "post": {
+        "operationId": "checkDeckAgainstCollection",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "match_printing": {
+                    "type": "boolean"
+                  },
+                  "include_locations": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Compare a decklist with the active physical collection.",
+        "deprecated": false
+      }
+    },
+    "/api/decks/analyze": {
+      "post": {
+        "operationId": "analyzeDeck",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "include_collection": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Analyze the structure and card composition of a decklist.",
+        "deprecated": false
+      }
+    },
+    "/api/decks/compare": {
+      "post": {
+        "operationId": "compareDecks",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deck_a": {
+                    "type": "string"
+                  },
+                  "deck_b": {
+                    "type": "string"
+                  },
+                  "include_collection": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "deck_a",
+                  "deck_b"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Compare two decklists and return their similarities and differences.",
+        "deprecated": false
+      }
+    },
+    "/api/decks/optimize": {
+      "post": {
+        "operationId": "optimizeDeck",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "constraints": {
+                    "type": "object",
+                    "properties": {
+                      "owned_only": {
+                        "type": "boolean"
+                      },
+                      "maximum_additions": {
+                        "type": "integer"
+                      },
+                      "preserve_theme": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Return structured diagnostics and possible improvements for a decklist.",
+        "deprecated": false
+      }
+    },
+    "/api/set-cards": {
+      "get": {
+        "operationId": "getSetCards",
+        "parameters": [
+          {
+            "name": "set",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number.",
+            "required": false
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of cards per page.",
+            "required": false
+          },
+          {
+            "name": "rarity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card rarity filter.",
+            "required": false
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card color filter.",
+            "required": false
+          }
+        ],
+        "description": "Get a paginated card list for an imported set.",
+        "deprecated": false
+      }
+    },
+    "/api/simulate-pack": {
+      "get": {
+        "operationId": "simulatePack",
+        "parameters": [
+          {
+            "name": "set",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card type or product type."
+          }
+        ],
+        "description": "Simulate a configured booster pack or prerelease product.",
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

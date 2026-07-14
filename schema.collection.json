@@ -1,0 +1,138 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MTG GPT Actions - collection",
+    "description": "Card, collection, deck, set, and pack actions.",
+    "version": "v3.2.0"
+  },
+  "servers": [
+    {
+      "url": "https://mtg-gpt-five.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/collection/search": {
+      "get": {
+        "operationId": "searchCollection",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card name.",
+            "required": false
+          },
+          {
+            "name": "scryfall_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Scryfall card identifier.",
+            "required": false
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Set code.",
+            "required": false
+          },
+          {
+            "name": "collector_number",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collector number.",
+            "required": false
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Collection location.",
+            "required": false
+          },
+          {
+            "name": "finish",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card finish.",
+            "required": false
+          },
+          {
+            "name": "condition",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card condition.",
+            "required": false
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Card language.",
+            "required": false
+          }
+        ],
+        "description": "Search active cards in the physical collection.",
+        "deprecated": false
+      }
+    },
+    "/api/collection/stats": {
+      "get": {
+        "operationId": "getCollectionStats",
+        "description": "Get totals and grouped statistics for the active collection.",
+        "deprecated": false
+      }
+    },
+    "/api/collection/check-deck": {
+      "post": {
+        "operationId": "checkDeckAgainstCollection",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "match_printing": {
+                    "type": "boolean"
+                  },
+                  "include_locations": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Compare a decklist with the active physical collection.",
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

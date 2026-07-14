@@ -1,0 +1,126 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MTG GPT Actions - decks",
+    "description": "Card, collection, deck, set, and pack actions.",
+    "version": "v3.2.0"
+  },
+  "servers": [
+    {
+      "url": "https://mtg-gpt-five.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/decks/analyze": {
+      "post": {
+        "operationId": "analyzeDeck",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "include_collection": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Analyze the structure and card composition of a decklist.",
+        "deprecated": false
+      }
+    },
+    "/api/decks/compare": {
+      "post": {
+        "operationId": "compareDecks",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deck_a": {
+                    "type": "string"
+                  },
+                  "deck_b": {
+                    "type": "string"
+                  },
+                  "include_collection": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "deck_a",
+                  "deck_b"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Compare two decklists and return their similarities and differences.",
+        "deprecated": false
+      }
+    },
+    "/api/decks/optimize": {
+      "post": {
+        "operationId": "optimizeDeck",
+        "x-openai-isConsequential": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decklist": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "constraints": {
+                    "type": "object",
+                    "properties": {
+                      "owned_only": {
+                        "type": "boolean"
+                      },
+                      "maximum_additions": {
+                        "type": "integer"
+                      },
+                      "preserve_theme": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "decklist"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Return structured diagnostics and possible improvements for a decklist.",
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}
