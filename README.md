@@ -5,15 +5,19 @@ A Vercel-hosted Magic: The Gathering middleware for Custom GPT Actions. It combi
 ## Architecture
 
 ```text
-ManaBox CSV ──► /api/collection ──► Supabase
-Custom GPT ──► /api/cards      ──► Scryfall / Redis
-           └─► /api/decks      ──► card + collection services
+ManaBox CSV ──► local import script ──► Supabase
+Custom GPT ──► stable public paths ──► Vercel rewrites ──► domain routers
+                                                        ├─► card services
+                                                        ├─► collection services
+                                                        └─► deck services
 ```
 
-The primary domains are:
+Eight protected public paths are internally rewritten to three consolidated functions: `cards-router.js`, `collection-router.js`, and `decks-router.js`. The client-visible paths do not redirect or change. The two public set tools remain direct functions.
+
+The primary API domains are:
 
 - `/api/cards`: canonical card search and details.
-- `/api/collection`: complete-snapshot imports, ownership search, statistics, and deck coverage.
+- `/api/collection`: ownership search, statistics, and deck coverage.
 - `/api/decks`: structured deck analysis, comparison, and optimization diagnostics.
 
 Existing `/api/set-cards` and `/api/simulate-pack` routes continue to use compact Redis set data and local product collation files.
@@ -33,7 +37,7 @@ Existing `/api/set-cards` and `/api/simulate-pack` routes continue to use compac
 | `GET` | `/api/set-cards` | Compact imported set data | Public legacy tool |
 | `GET` | `/api/simulate-pack` | Simulate configured booster products | Public legacy tool |
 
-The old collection routes `import-manabox` and `by-location` remain in the repository for migration compatibility but are not part of the current GPT Action schema. New clients should use the structured routes above.
+These are the 10 stable routes exposed in `schema.yaml`. Deleted legacy routes and collection-import HTTP endpoints are intentionally unsupported.
 
 ## Authentication
 
@@ -49,14 +53,7 @@ or:
 X-API-Key: <key>
 ```
 
-Two backend permission levels are supported:
-
-| Variable | Permission |
-| --- | --- |
-| `GPT_ACTION_API_KEY` | Card, collection-read, and deck actions |
-| `GPT_IMPORT_API_KEY` | Administrative collection synchronization; not exposed in `schema.yaml` |
-
-If `GPT_IMPORT_API_KEY` is omitted, the backend falls back to the read key. Separate credentials are recommended. Configure the Custom GPT Action with `GPT_ACTION_API_KEY`; imports remain an administrative backend/local-script capability.
+`GPT_ACTION_API_KEY` authorizes card, collection-read, and deck actions. Configure the Custom GPT Action with this key. Collection import is a local administrative workflow and is never exposed as a GPT Action or HTTP endpoint.
 
 ## Environment variables
 
@@ -66,7 +63,6 @@ If `GPT_IMPORT_API_KEY` is omitted, the backend falls back to the read key. Sepa
 SUPABASE_URL
 SUPABASE_SECRET_KEY
 GPT_ACTION_API_KEY
-GPT_IMPORT_API_KEY
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is accepted as an alias for `SUPABASE_SECRET_KEY`. These values belong only in server-side configuration and must never be placed in `schema.yaml`, GPT instructions, logs, or responses.
@@ -87,8 +83,6 @@ UPSTASH_REDIS_REST_TOKEN
 | `IMPORT_RATE_LIMIT` | `5` | Import attempts per rolling hour |
 | `SCRYFALL_USER_AGENT` | `mtg-gpt/1.0` | Scryfall client identification |
 
-Legacy or unrelated endpoints may require additional variables such as `CRON_SECRET` or a Discord webhook if those routes are restored.
-
 ## Supabase setup
 
 The collection schema contains:
@@ -107,51 +101,23 @@ supabase/migrations/003_sync_collection_snapshot.sql
 
 The migrations are a fresh target schema, not an automatic upgrade for the earlier legacy tables. If legacy `collection_imports` or `owned_cards` tables already exist, back them up and explicitly migrate or drop them before applying the target schema. Row-level security is enabled and no anonymous write policy is created.
 
-## ManaBox import
+## Local ManaBox import
 
-`POST /api/collection/import` accepts JSON containing raw CSV text:
-
-```json
-{
-  "source": "manabox",
-  "filename": "Black Binder.csv",
-  "csv": "Name,Set code,Collector number,Quantity,Binder Name\n...",
-  "mode": "synchronize",
-  "confirmed": true
-}
-```
-
-Example request:
-
-```bash
-curl --fail-with-body \
-  -X POST \
-  -H "Authorization: Bearer $GPT_IMPORT_API_KEY" \
-  -H "Content-Type: application/json" \
-  --data-binary @request.json \
-  "https://your-domain.vercel.app/api/collection/import"
-```
+Collection synchronization is available only through `scripts/import-manabox-local.js`. No import file exists under `api/`, so neither the Custom GPT nor an HTTP client can modify the stored collection.
 
 The import represents the complete active collection snapshot:
 
-1. Authenticate with import permission.
-2. Require `confirmed: true`.
-3. Validate source, mode, request size, CSV shape, and row values.
-4. Normalize physical attributes and aggregate duplicate ownership entries.
-5. Calculate a SHA-256 hash and skip identical completed imports.
-6. Atomically insert, update, or reactivate current entries.
-7. Archive active entries missing from the new snapshot.
-8. Store counts and warnings in the import audit record.
+1. Confirm the import in the local administrative command.
+2. Validate source, mode, file size, CSV shape, and row values.
+3. Normalize physical attributes and aggregate duplicate ownership entries.
+4. Calculate a SHA-256 hash and skip identical completed imports.
+5. Atomically insert, update, or reactivate current entries.
+6. Archive active entries missing from the new snapshot.
+7. Store counts and warnings in the import audit record.
 
 A rejected or failed import does not replace the previous active snapshot. Routine imports never permanently delete collection records.
 
-### Custom GPT boundary
-
-Collection import is intentionally omitted from `schema.yaml`. The Custom GPT may analyze an uploaded CSV, but it cannot modify the stored collection. Run imports through the authenticated administrative endpoint or local script instead.
-
-### Local import
-
-The local script calls the same service used by the HTTP endpoint:
+Collection import is intentionally omitted from `schema.yaml`. The Custom GPT may analyze an uploaded CSV, but it cannot modify the stored collection. The local script calls the existing import service directly:
 
 ```bash
 node --env-file=.env.local \
@@ -197,7 +163,7 @@ Recognized sections are Commander, Mainboard, Sideboard, Maybeboard, and Compani
 
 ## Card data and set tools
 
-Scryfall remains the canonical authority for card names, oracle data, types, legalities, images, and printing identifiers. Redis stores compact imported set records used by `/api/set-cards`, `/api/card`, `/api/card-detail`, and pack simulation.
+Scryfall remains the canonical authority for card names, oracle data, types, legalities, images, and printing identifiers. Redis stores compact imported set records used by `/api/set-cards` and pack simulation.
 
 Import a compact Scryfall set CSV with:
 
@@ -240,6 +206,8 @@ Run Vercel functions locally:
 ```bash
 vercel dev
 ```
+
+Every JavaScript file directly or recursively under `api/` is a Vercel function entry point. Keep that directory at five files for this architecture, and verify the bundled function count before deployment so the project stays within the Hobby limit.
 
 Before deployment:
 

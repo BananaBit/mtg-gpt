@@ -1,1 +1,13 @@
-{}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/cards/search", "destination": "/api/cards-router?operation=search" },
+    { "source": "/api/cards/details", "destination": "/api/cards-router?operation=details" },
+    { "source": "/api/collection/search", "destination": "/api/collection-router?operation=search" },
+    { "source": "/api/collection/stats", "destination": "/api/collection-router?operation=stats" },
+    { "source": "/api/collection/check-deck", "destination": "/api/collection-router?operation=check-deck" },
+    { "source": "/api/decks/analyze", "destination": "/api/decks-router?operation=analyze" },
+    { "source": "/api/decks/compare", "destination": "/api/decks-router?operation=compare" },
+    { "source": "/api/decks/optimize", "destination": "/api/decks-router?operation=optimize" }
+  ]
+}
