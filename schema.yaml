@@ -347,6 +347,7 @@ paths:
           description: Invalid set or product type.
 
 components:
+  schemas: {}
   securitySchemes:
     bearerAuth:
       type: http
